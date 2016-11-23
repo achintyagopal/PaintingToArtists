@@ -21,7 +21,7 @@ class Instance:
         self._feature_vector = feature_vector
         self._label = label
 
-    def get_feature_ector(self):
+    def get_feature_vector(self):
         return self._feature_vector
 
     def get_label(self):

@@ -7,7 +7,7 @@ from cs475_types import *
 
 def get_args():
 
-    parser = argparse.ArgumentParser(description="This is the main test harness for your algorithms.")
+    parser = argparse.ArgumentParser(description="This is the main file for running different types of algorithms.")
 
     parser.add_argument("--folder", type=str,
         help="The folder to use for extracting features.")
@@ -76,7 +76,6 @@ def create_instances(folder_name, algorithm, args):
             continue
         folders.append(folder)
 
-    # train_path = folder_name + '/train/'
     instances = []
     for folder in folders:
         path = train_path + folder + '/'
@@ -86,17 +85,6 @@ def create_instances(folder_name, algorithm, args):
                 instnaces.append(create_instance(join(path, file), algorithm, args))
 
     return instances
-
-    # test_path = folder_name + '/test/'
-    # testing_instances = []
-    # for folder in folders:
-    #     path = test_path + folder + '/'
-    #     files = os.listdir(path)
-    #     for file in files:
-    #         if os.path.isfile(os.path.join(path, file)):
-    #             testing_instances.append(create_instance(join(path, file), algorithm, args))
-
-    # return training_instances, testing_instances
 
 
 # load instances from filename
