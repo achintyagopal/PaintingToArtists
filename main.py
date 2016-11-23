@@ -22,7 +22,8 @@ def get_args():
     parser.add_argument("--model-file", type=str,
                         help="The name of the model file to create/load.")
     parser.add_argument("--predictions-file", type=str, help="The predictions file to create.")
-    parser.add_argument("--algorithm", type=str, help="The name of the algorithm for training.")
+    parser.add_argument("--feature_algorithm", type=str, help="The name of the algorithm for training.")
+    parser.add_argument("--learning_algorithm", type=str, help="The name of the algorithm for training.")
 
     args = parser.parse_args()
     check_args(args)
@@ -31,16 +32,7 @@ def get_args():
 
 
 def check_args(args):
-    if args.mode.lower() == "train":
-        if args.folder is None and args.data is None:
-            raise Exception("--data or --folder (load training features) should be specified in mode \"train\"")
-        if args.training_file is None:
-            raise Exception("--training-file (load training features) should be specified in mode \"train\"")
-        if not os.path.exists(args.training_file):
-            raise Exception("training file specified by --training-file does not exist.")
-        if args.algorithm is None:
-            raise Exception("--algorithm should be specified in mode \"train\"")
-    elif args.mode.lower() == "feature":
+    if args.mode.lower() == "feature":
         if args.folder is None:
             raise Exception("--folder (folder with data) should be specified in mode \"feature\"")
         if args.algorithm is None:
@@ -49,11 +41,26 @@ def check_args(args):
             raise Exception("--training-file (save training features) should be specified in mode \"feature\"")
         if args.testing_file is None:
             raise Exception("--testing-file (save testing features) should be specified in mode \"feature\"")
+        if args.feature_algorithm is None:
+            raise Exception("--feature-algorithm should be specified in mode \"feature\"")
         if args.model_file is None:
             raise Exception("--model-file should be specified in mode \"feature\"")
+    elif args.mode.lower() == "train":
+        if args.folder is None and args.data is None:
+            raise Exception("--data or --folder (load training features) should be specified in mode \"train\"")
+        if args.folder is not None and args.feature_algorithm is None:
+            raise Exception("--feature-algorithm should be specified in mode \"train\" when given folder")
+        if args.training_file is None:
+            raise Exception("--training-file (load training features) should be specified in mode \"train\"")
+        if not os.path.exists(args.training_file):
+            raise Exception("training file specified by --training-file does not exist.")
+        if args.training_algorithm is None:
+            raise Exception("--training-algorithm should be specified in mode \"train\"")
     else:
         if args.folder is None and args.data is None:
             raise Exception("--data or --folder (load training features) should be specified in mode \"test\"")
+        if args.folder is not None and args.feature_algorithm is None:
+            raise Exception("--feature-algorithm should be specified in mode \"test\" when given folder")
         if args.predictions_file is None:
             raise Exception("--prediction-file should be specified in mode \"test\"")
         if args.testing_file is None:
@@ -147,8 +154,8 @@ def main():
 
         # args.folder is the folder where training data and testing data is, with specific
         # directory structure
-        training_instances = create_instances(args.folder + '/train/', args.algorithm, args)
-        testing_instances = create_instances(args.folder + '/test/', args.algorithm, args)
+        training_instances = create_instances(args.folder + '/train/', args.feature_algorithm, args)
+        testing_instances = create_instances(args.folder + '/test/', args.feature_algorithm, args)
 
         # save features extracted for training
         try:
@@ -173,10 +180,10 @@ def main():
         if args.data is not None:
             instances = load_data(args.data)
         else:
-            instances = create_instances(args.folder + '/train/', args.algorithm, args)
+            instances = create_instances(args.folder + '/train/', args.feature_algorithm, args)
 
         # train some model
-        predictor = train(features, args.algorithm, args)
+        predictor = train(features, args.training_algorithm, args)
 
         # save the model
         try:
