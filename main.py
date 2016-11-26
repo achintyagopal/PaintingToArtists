@@ -3,7 +3,7 @@ import argparse
 import sys
 import pickle
 
-from cs475_types import *
+from project_types import *
 
 def get_args():
 
