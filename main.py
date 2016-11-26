@@ -2,8 +2,13 @@ import os
 import argparse
 import sys
 import pickle
+import cv2
+import numpy as np
 
 from cs475_types import *
+from images import *
+from feature_algorithms import *
+
 
 def get_args():
 
@@ -22,8 +27,8 @@ def get_args():
     parser.add_argument("--model-file", type=str,
                         help="The name of the model file to create/load.")
     parser.add_argument("--predictions-file", type=str, help="The predictions file to create.")
-    parser.add_argument("--feature_algorithm", type=str, help="The name of the algorithm for training.")
-    parser.add_argument("--learning_algorithm", type=str, help="The name of the algorithm for training.")
+    parser.add_argument("--feature-algorithm", type=str, help="The name of the algorithm for training.")
+    parser.add_argument("--learning-algorithm", type=str, help="The name of the algorithm for training.")
 
     args = parser.parse_args()
     check_args(args)
@@ -83,15 +88,29 @@ def create_instances(folder_name, algorithm, args):
             continue
         folders.append(folder)
 
-    instances = []
+    imgs = []
     for folder in folders:
         path = train_path + folder + '/'
         files = os.listdir(path)
         for file in files:
             if os.path.isfile(os.path.join(path, file)):
-                instnaces.append(create_instance(join(path, file), algorithm, args))
+                # feature_vector = create_vector(join(path, file), algorithm, args)
+                # instances = Instance(feature_vector, folder)
+                # instnaces.append(instance)
+                imgs.append((read_color_image(os.path.join(path, file)), folder))
 
-    return instances
+
+    # instances = []
+    # for folder in folders:
+        # path = train_path + folder + '/'
+        # files = os.listdir(path)
+        # for file in files:
+            # if os.path.isfile(os.path.join(path, file)):
+                # feature_vector = create_vector(join(path, file), algorithm, args)
+                # instances = Instance(feature_vector, folder)
+                # instnaces.append(instance)
+
+    return convert_images(imgs, algorithm, args)
 
 
 # load instances from filename
@@ -122,17 +141,18 @@ def write_predictions(predictor, instances, predictions_file):
         raise Exception("Exception while opening/writing file for writing predicted labels: " + predictions_file)
 
 
-def create_instance(filename, algorithm, args):
+def convert_images(imgs, algorithm, args):
     if algorithm == "color":
         # create color histogram
-        return None
+        return color_histogram(imgs)
     elif algorithm == "raster":
         # just make one dimensional array
-        return None
+        return raster(imgs)
     elif algorithm == "bow":
         # create bag of words encoding
         return None
     return None
+
 
 
 # train algorithm on instances
