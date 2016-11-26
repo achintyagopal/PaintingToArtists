@@ -5,7 +5,9 @@ import pickle
 import cv2
 import numpy as np
 
-from cs475_types import *
+
+from project_types import *
+# from cs475_types import *
 from images import *
 from feature_algorithms import *
 
