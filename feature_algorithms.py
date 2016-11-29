@@ -7,7 +7,7 @@ def raster(images):
     instances = []
     for img, label in images:
         rows, cols, channels = img.shape[]
-        instances.append(Instance(cv2.resize(img, (rows*cols*channels)), label))
+        instances.append(Instance(np.flatten(img), label))
     return instances
 
 def color_histogram(images, bits = 12):
