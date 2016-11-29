@@ -94,12 +94,13 @@ def create_instances(folder_name, algorithm, args):
     for folder in folders:
         path = train_path + folder + '/'
         files = os.listdir(path)
-        for file in files:
-            if os.path.isfile(os.path.join(path, file)):
+        for file_str in files:
+            if os.path.isfile(os.path.join(path, file_str)):
                 # feature_vector = create_vector(join(path, file), algorithm, args)
                 # instances = Instance(feature_vector, folder)
                 # instnaces.append(instance)
-                imgs.append((read_color_image(os.path.join(path, file)), folder))
+                # imgs.append((read_color_image(os.path.join(path, file)), folder))
+                imgs.append(os.path.join(path, file_str))
 
 
     # instances = []
@@ -119,7 +120,7 @@ def create_instances(folder_name, algorithm, args):
 def load_data(filename):
     instances = None
     try:
-        with open(file, 'rb') as reader:
+        with open(filename, 'rb') as reader:
             instances = pickle.load(reader)
     except IOError:
         raise Exception("Exception while reading the model file.")
