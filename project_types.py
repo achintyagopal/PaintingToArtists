@@ -21,11 +21,14 @@ class Instance:
         self._feature_vector = feature_vector
         self._label = label
 
-    def get_feature_vector(self):
+    def get_vector(self):
         return self._feature_vector
 
     def get_label(self):
         return self._label
+
+    def __iter__(self): 
+        return iter((self.feature_vector, self.label))
 
 # abstract base class for defining predictors
 class Predictor:
