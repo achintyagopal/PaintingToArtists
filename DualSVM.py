@@ -28,7 +28,10 @@ class DualSVM(Predictor):
 		ret = 0
 		for i in range(len(self.alphas)):
 			if self.alphas[i] != 0:
-				ret += vector.dot(self.instances[i].get_vector())
+				if self.label == self.instances[i].get_label():
+					ret += vector.dot(self.instances[i].get_vector())
+				else:
+					ret -= vector.dot(self.instances[i].get_vector())
 		return ret
 
 
