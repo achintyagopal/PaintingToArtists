@@ -9,19 +9,23 @@ class DualSVM(Predictor):
 		self.lam = SVM_lam
 		self.iterations = iterations
 
-
-	def train(self, instances):
+	def train(self, feature_converter):
 		self.instances = instances
 		pass
 
+	def predict(self, feature_converter):
+		labels = []
+		# instances = feature_converter.getTestingInstances()
+		# for instance in instances:
+		for i in range(feature_converter.testingInstancesSize()):
+			instance = feature_converter.getTestingInstances(i)
 
-	def predict(self, instance):
-		score_value = self.score(instance)
-		if score_value >= 0.0:
-            return 1
-        return 0
-
-
+			score_value = self.score(instance)
+			if score_value >= 0.0:
+				labels.append(1)
+	        else:
+	        	labels.append(0)
+		return labels
 
 	def score(self, instance):
 		vector = instance.get_vector()

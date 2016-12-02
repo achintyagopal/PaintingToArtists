@@ -5,11 +5,8 @@ import pickle
 import cv2
 import numpy as np
 
-
 from project_types import *
-# from cs475_types import *
 from images import *
-from feature_algorithms import *
 
 
 def get_args():
@@ -18,14 +15,10 @@ def get_args():
 
     parser.add_argument("--folder", type=str,
         help="The folder to use for extracting features.")
-    parser.add_argument("--data", type=str, 
-        help="The file for training or testing.")
     parser.add_argument("--mode", type=str, required=True, choices=["feature", "train", "test"],
                         help="Operating mode: feature extraction, train or test.")
-    parser.add_argument("--training-file", type=str,
-                        help="The name of the file containing training data")
-    parser.add_argument("--testing-file", type=str,
-                        help="The name of the file containing test data")
+    parser.add_argument("--feature-file", type=str,
+                        help="The name of the file containing feature converter/ instance creator")
     parser.add_argument("--model-file", type=str,
                         help="The name of the model file to create/load.")
     parser.add_argument("--predictions-file", type=str, help="The predictions file to create.")
@@ -44,10 +37,8 @@ def check_args(args):
             raise Exception("--folder (folder with data) should be specified in mode \"feature\"")
         if args.algorithm is None:
             raise Exception("--algorithm (feature extraction algorithm) should be specified in mode \"feature\"")
-        if args.training_file is None:
-            raise Exception("--training-file (save training features) should be specified in mode \"feature\"")
-        if args.testing_file is None:
-            raise Exception("--testing-file (save testing features) should be specified in mode \"feature\"")
+        if args.feature_file is None:
+            raise Exception("--feature-file (save features) should be specified in mode \"feature\"")
         if args.feature_algorithm is None:
             raise Exception("--feature-algorithm should be specified in mode \"feature\"")
         if args.model_file is None:
@@ -57,10 +48,8 @@ def check_args(args):
             raise Exception("--data or --folder (load training features) should be specified in mode \"train\"")
         if args.folder is not None and args.feature_algorithm is None:
             raise Exception("--feature-algorithm should be specified in mode \"train\" when given folder")
-        if args.training_file is None:
-            raise Exception("--training-file (load training features) should be specified in mode \"train\"")
-        if not os.path.exists(args.training_file):
-            raise Exception("training file specified by --training-file does not exist.")
+        if args.folder is None and args.feature_file is None:
+            raise Exception("--feature-file should be specified in mode \"test\" when not given folder")
         if args.training_algorithm is None:
             raise Exception("--training-algorithm should be specified in mode \"train\"")
     else:
@@ -68,21 +57,18 @@ def check_args(args):
             raise Exception("--data or --folder (load training features) should be specified in mode \"test\"")
         if args.folder is not None and args.feature_algorithm is None:
             raise Exception("--feature-algorithm should be specified in mode \"test\" when given folder")
+        if args.folder is None and args.feature_file is None:
+            raise Exception("--feature-file should be specified in mode \"test\" when not given folder")
         if args.predictions_file is None:
             raise Exception("--prediction-file should be specified in mode \"test\"")
-        if args.testing_file is None:
-            raise Exception("--testing-file (load testing features) should be specified in mode \"test\"")
-        if not os.path.exists(args.testing_file):
-            raise Exception("testing file specified by --testing-file does not exist.")
         if args.model_file is None:
             raise Exception("--model-file should be specified in mode \"test\"")
         if not os.path.exists(args.model_file):
             raise Exception("model file specified by --model-file does not exist.")
 
 
-# traverse through folder, extract features and convert to instances
-def create_instances(folder_name, algorithm, args):
-    # folders = check_directory_structure(folder_name)            
+def get_files(folder_name, algorithm, args):
+
     foldersTmp = os.listdir(folder_name)
     folders = []
     for folder in foldersTmp:
@@ -96,24 +82,9 @@ def create_instances(folder_name, algorithm, args):
         files = os.listdir(path)
         for file_str in files:
             if os.path.isfile(os.path.join(path, file_str)):
-                # feature_vector = create_vector(join(path, file), algorithm, args)
-                # instances = Instance(feature_vector, folder)
-                # instnaces.append(instance)
-                # imgs.append((read_color_image(os.path.join(path, file)), folder))
                 imgs.append(os.path.join(path, file_str))
 
-
-    # instances = []
-    # for folder in folders:
-        # path = train_path + folder + '/'
-        # files = os.listdir(path)
-        # for file in files:
-            # if os.path.isfile(os.path.join(path, file)):
-                # feature_vector = create_vector(join(path, file), algorithm, args)
-                # instances = Instance(feature_vector, folder)
-                # instnaces.append(instance)
-
-    return convert_images(imgs, algorithm, args)
+    return imgs
 
 
 # load instances from filename
@@ -130,11 +101,13 @@ def load_data(filename):
 
 
 # print in predictions_file both correct answer and wrong answer
-def write_predictions(predictor, instances, predictions_file):
+def write_predictions(predictor, feature_converter, predictions_file):
+    labels = predictor.predict(feature_converter)
     try:
         with open(predictions_file, 'w') as writer:
-            for instance in instances:
-                label = predictor.predict(instance)
+            for i in range(len(labels)):
+                label = labels[i]
+                instance = feature_converter.get_testing_instance(i)
         
                 writer.write(str(label))
                 writer.write(' ')
@@ -144,22 +117,15 @@ def write_predictions(predictor, instances, predictions_file):
         raise Exception("Exception while opening/writing file for writing predicted labels: " + predictions_file)
 
 
-def convert_images(imgs, algorithm, args):
+def get_instance_converter(algorithm, args):
     if algorithm == "color":
-        # create color histogram
-        return color_histogram(imgs)
-    elif algorithm == "raster":
-        # just make one dimensional array
-        return raster(imgs)
+        return ColorHistogram()
     elif algorithm == "bow":
-        # create bag of words encoding
-        return None
+        return BagOfWords()        
     return None
 
-
-
 # train algorithm on instances
-def train(instances, algorithm, args):
+def train(feature_converter, algorithm, args):
     if algorithm == "SVM":
         # create multiclass SVM model
         return None
@@ -177,22 +143,15 @@ def main():
 
         # args.folder is the folder where training data and testing data is, with specific
         # directory structure
-        training_instances = create_instances(args.folder + '/train/', args.feature_algorithm, args)
-        testing_instances = create_instances(args.folder + '/test/', args.feature_algorithm, args)
+        feature_converter = get_instance_converter(args.feature_algorithm, args)
+        training_files = get_files(args.folder + '/train/', args.feature_algorithm, args)
+        testing_files = get_files(args.folder + '/test/', args.feature_algorithm, args)
+        feature_converter.createTrainingInstances(training_files)
+        feature_converter.createTestingInstances(testing_files)
 
-        # save features extracted for training
         try:
-            with open(args.training_file, 'wb') as writer:
-                pickle.dump(training_instances, writer)
-        except IOError:
-            raise Exception("Exception while writing to the model file.")        
-        except pickle.PickleError:
-            raise Exception("Exception while dumping pickle.")
-
-        # save features extracted for testing
-        try:
-            with open(args.testing_file, 'wb') as writer:
-                pickle.dump(testing_instances, writer)
+            with open(args.feature_file, 'wb') as writer:
+                pickle.dump(feature_converter, writer)
         except IOError:
             raise Exception("Exception while writing to the model file.")        
         except pickle.PickleError:
@@ -200,13 +159,15 @@ def main():
 
     elif mode == "train":
         # Load the training data.
-        if args.data is not None:
-            instances = load_data(args.data)
+        if args.feature_file is not None:
+            feature_converter = load_data(args.feature_file)
         else:
-            instances = create_instances(args.folder + '/train/', args.feature_algorithm, args)
+            feature_converter = get_instance_converter(args.feature_algorithm, args)
+            training_files = get_files(args.folder + '/train/', args.feature_algorithm, args)
+            feature_converter.createTrainingInstances(training_files)
 
         # train some model
-        predictor = train(features, args.training_algorithm, args)
+        predictor = train(feature_converter, args.training_algorithm, args)
 
         # save the model
         try:
@@ -219,10 +180,12 @@ def main():
             
     elif mode == "test":
         # Load the test data.
-        if args.data is not None:
-            instances = load_data(args.data)
+        if args.feature_file is not None:
+            feature_converter = load_data(args.feature_file)
         else:
-            instances = create_instances(args.folder + '/test/', args.algorithm, args)
+            feature_converter = get_instance_converter(args.feature_algorithm, args)
+            testing_files = get_files(args.folder + '/test/', args.feature_algorithm, args)
+            feature_converter.createTestingInstances(testing_files)
 
         predictor = None
         # Load the model.
@@ -235,10 +198,9 @@ def main():
             raise Exception("Exception while loading pickle.")
             
         # use predictor on instances, save in args.predictions_file
-        write_predictions(predictor, instances, args.predictions_file)
+        write_predictions(predictor, feature_converter, args.predictions_file)
     else:
         raise Exception("Unrecognized mode.")
 
 if __name__ == "__main__":
     main()
-
