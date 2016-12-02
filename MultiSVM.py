@@ -10,22 +10,30 @@ class MultiSVM(Predictor):
 		self.iterations = iterations
 
 
-	def train(self, instances):
+	def train(self, feature_converter):
 		labels = set()
-		for vector, label in instances:
-				labels.add(label)
+		instances = feature_converter.getTrainingInstances()
+		# for vector, label in instances:
+		for i in range(feature_converter.testingInstancesSize()):
+			vector, label = feature_converter.getTestingInstances(i)
+			labels.add(label)
+
 		for l in labels:
 			self.svm[l] = DualSVM(l, self.lam, self.iterations)
-			self.svm[l].train(instances)
+			self.svm[l].train(feature_converter)
 
-	def predict(self, instance):
-		max_label = None
-		max_val = None
-		for label, d_svm in self.svm.iteritems():
-			score = d_svm.score(instance)
-			if max_val is None or score > max_val:
-				max_val = score
-				max_label = label
-		return max_label
-
-# END OF FILE
+	def predict(self, feature_converter):
+		labels = []
+		# instances = feature_converter.trainingInstancesSize()
+		for i in range(feature_converter.testingInstancesSize()):
+			instance = feature_converter.getTestingInstances(i)
+		# for instance in instances
+			max_label = None
+			max_val = None
+			for label, d_svm in self.svm.iteritems():
+				score = d_svm.score(instance)
+				if max_val is None or score > max_val:
+					max_val = score
+					max_label = label
+			labels.append(max_label)
+		return labels

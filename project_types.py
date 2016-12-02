@@ -35,11 +35,38 @@ class Predictor:
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def train(self, instances): 
+    def train(self, feature_converter): 
         pass
 
     @abstractmethod
-    def predict(self, instance): 
+    def predict(self, feature_converter): 
         pass
 
        
+class FeatureConverter():
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def createTrainingInstances(self, files):
+        pass
+    
+    @abstractmethod
+    def createTestingInstances(self, files):
+        pass
+    
+    @abstractmethod
+    def getTrainingInstance(self, index):
+        pass
+    
+    @abstractmethod
+    def getTestingInstance(self, index):
+        pass
+    
+    @abstractmethod
+    def trainingInstancesSize(self):
+        pass
+    
+    @abstractmethod
+    def testingInstanceSize(self):
+        pass
+
