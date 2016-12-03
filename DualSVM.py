@@ -1,4 +1,5 @@
 import numpy as np
+from random import shuffle
 from project_types import *
 
 class DualSVM(Predictor):
@@ -10,15 +11,48 @@ class DualSVM(Predictor):
 		self.iterations = iterations
 
 	def train(self, feature_converter):
-		self.instances = instances
-		pass
+		t = 1
+		constant = 1
+		self.feature_converter = feature_converter
+		self.alphas = np.zeros(feature_converter.trainingInstancesSize())
+
+		for j in range(self.iterations):
+			print j
+			instance_order = []
+			for i in range(feature_converter.trainingInstancesSize()):
+				instance_order.append(i)
+
+			shuffle(instance_order)
+
+			for i in range(feature_converter.trainingInstancesSize()):
+				print i
+				instance = feature_converter.getTrainingInstance(i)
+				yBar =  self.score(instance)
+
+				if self.label == instance.get_label():
+					y = -1
+				else:
+					y = 1
+
+				learningRate = 1.0 / (self.lam * t)
+				constant *= 1 - 1.0/t
+
+				if yBar * y < 1:
+					self.alphas = constant * self.alphas
+					self.alphas[i] += learningRate * y
+					constant = 1
+
+				t += 1
+
+		if constant != 1:
+			self.alphas = constant * self.alphas
+
 
 	def predict(self, feature_converter):
 		labels = []
-		# instances = feature_converter.getTestingInstances()
-		# for instance in instances:
+
 		for i in range(feature_converter.testingInstancesSize()):
-			instance = feature_converter.getTestingInstances(i)
+			instance = feature_converter.getTestingInstance(i)
 
 			score_value = self.score(instance)
 			if score_value >= 0.0:
@@ -32,10 +66,8 @@ class DualSVM(Predictor):
 		ret = 0
 		for i in range(len(self.alphas)):
 			if self.alphas[i] != 0:
-				if self.label == self.instances[i].get_label():
-					ret += vector.dot(self.instances[i].get_vector())
-				else:
-					ret -= vector.dot(self.instances[i].get_vector())
+				training_instance = self.feature_converter.getTrainingInstance(i)
+				ret += self.alphas[i] * vector.dot(training_instance.get_vector())
 		return ret
 
 

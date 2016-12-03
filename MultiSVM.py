@@ -1,6 +1,6 @@
 import numpy as np
 from project_types import *
-
+from DualSVM import DualSVM
 
 class MultiSVM(Predictor):
 
@@ -12,10 +12,8 @@ class MultiSVM(Predictor):
 
 	def train(self, feature_converter):
 		labels = set()
-		instances = feature_converter.getTrainingInstances()
-		# for vector, label in instances:
-		for i in range(feature_converter.testingInstancesSize()):
-			vector, label = feature_converter.getTestingInstances(i)
+		for i in range(feature_converter.trainingInstancesSize()):
+			label = feature_converter.getTrainingLabel(i)
 			labels.add(label)
 
 		for l in labels:
@@ -24,10 +22,8 @@ class MultiSVM(Predictor):
 
 	def predict(self, feature_converter):
 		labels = []
-		# instances = feature_converter.trainingInstancesSize()
 		for i in range(feature_converter.testingInstancesSize()):
-			instance = feature_converter.getTestingInstances(i)
-		# for instance in instances
+			instance = feature_converter.getTestingInstance(i)
 			max_label = None
 			max_val = None
 			for label, d_svm in self.svm.iteritems():
