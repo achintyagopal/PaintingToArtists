@@ -11,6 +11,7 @@ from images import *
 from ColorHistogram import ColorHistogram
 from BagOfWords import BagOfWords
 from MultiSVM import MultiSVM
+from StructuredSVM import StructuredSVM
 
 def get_args():
 
@@ -54,7 +55,7 @@ def check_args(args):
         if args.training_algorithm is None:
             raise Exception("--training-algorithm should be specified in mode \"train\"")
         if args.model_file is None:
-            raise Exception("--model-file should be specified in mode \"feature\"")
+            raise Exception("--model-file should be specified in mode \"train\"")
     else:
         if args.folder is None and args.feature_file is None:
             raise Exception("--feature-file or --folder (load training features) should be specified in mode \"train\"")
@@ -130,10 +131,12 @@ def get_instance_converter(algorithm, args):
 
 # train algorithm on instances
 def train(algorithm, args):
-    if algorithm == "SVM":
+    if algorithm == "mc_svm":
         # create multiclass SVM model
         return MultiSVM()
-    elif algorithm == "NeuralNetwork":
+    elif algorithm == "struct_svm":
+        return StructuredSVM()
+    elif algorithm == "nn":
         # train a neural network
         return None
     return None

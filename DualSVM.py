@@ -4,11 +4,12 @@ from project_types import *
 
 class DualSVM(Predictor):
 
-	def __init__(self, label = 1, SVM_lam = 1e-4, iterations = 5):
+	def __init__(self, label = 1, lambda_fn = lambda x,y: x.dot(y), SVM_lam = 1e-4, iterations = 5):
 		self.label = label
 		self.alphas = None
 		self.lam = SVM_lam
 		self.iterations = iterations
+		self.lambda_fn = lambda_fn
 
 	def train(self, feature_converter):
 		t = 1
@@ -67,7 +68,9 @@ class DualSVM(Predictor):
 		for i in range(len(self.alphas)):
 			if self.alphas[i] != 0:
 				training_instance = self.feature_converter.getTrainingInstance(i)
-				ret += self.alphas[i] * vector.dot(training_instance.get_vector())
+				# ret += self.alphas[i] * vector.dot(training_instance.get_vector())
+            	ret += self.alphas[i] * self.lambda_fn(vector, training_instance.get_vector())
+
 		return ret
 
 

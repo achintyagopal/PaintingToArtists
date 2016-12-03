@@ -19,7 +19,6 @@ class ColorHistogram(FeatureConverter):
         histogram = np.zeros(2 ** self.bits)
         img = read_color_image(img)
         rows, cols = img.shape[:2]
-        print rows, cols
         for r in range(rows):
             for c in range(cols):
                 blue = img.item((r,c,0))

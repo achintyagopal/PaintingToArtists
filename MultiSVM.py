@@ -4,10 +4,11 @@ from DualSVM import DualSVM
 
 class MultiSVM(Predictor):
 
-	def __init__(self, SVM_lam=1e-4, iterations = 5):
+	def __init__(self, lambda_fn = lambda x, y: x.dot(y) , SVM_lam=1e-4, iterations = 5):
 		self.svm = {}
 		self.lam = SVM_lam
 		self.iterations = iterations
+		self.lambda_fn = lambda_fn
 
 
 	def train(self, feature_converter):
@@ -17,7 +18,7 @@ class MultiSVM(Predictor):
 			labels.add(label)
 
 		for l in labels:
-			self.svm[l] = DualSVM(l, self.lam, self.iterations)
+			self.svm[l] = DualSVM(l, lambda_fn, self.lam, self.iterations)
 			self.svm[l].train(feature_converter)
 
 	def predict(self, feature_converter):
