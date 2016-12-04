@@ -18,7 +18,7 @@ class DualSVM(Predictor):
 		self.alphas = np.zeros(feature_converter.trainingInstancesSize())
 
 		for j in range(self.iterations):
-			print j
+
 			instance_order = []
 			for i in range(feature_converter.trainingInstancesSize()):
 				instance_order.append(i)
@@ -26,7 +26,7 @@ class DualSVM(Predictor):
 			shuffle(instance_order)
 
 			for i in range(feature_converter.trainingInstancesSize()):
-				print i
+
 				instance = feature_converter.getTrainingInstance(i)
 				yBar =  self.score(instance)
 
