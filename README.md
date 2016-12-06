@@ -18,3 +18,8 @@ A collection of various ML algorithms used to predict the artist of a Painting. 
 * Rembrant
 * Turner
 * Van Gogh
+
+## External Libraries
+* OpenCV 3.1.0
+* NumPy
+* Dill -> Pickle with lambda functions.
