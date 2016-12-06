@@ -42,7 +42,6 @@ class StructuredSVM():
             shuffle(instance_order)
 
             for i in instance_order:
-            # for i in range(feature_converter.trainingInstancesSize()):
                 instance = feature_converter.getTrainingInstance(i)
 
                 # find max score
@@ -73,7 +72,7 @@ class StructuredSVM():
                 elif training_instance is None:
                     training_instance = self.feature_converter.getTrainingInstance(i)
 
-                scores[j] += alpha * instance.get_vector().dot(training_instance.get_vector())
+                scores[j] += alpha * self.lambda_fn(instance.get_vector(), training_instance.get_vector())
 
         max_index = None
         max_score = None
