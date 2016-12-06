@@ -28,7 +28,7 @@ class Instance:
         return self._label
 
     def __iter__(self): 
-        return iter((self.feature_vector, self.label))
+        return iter((self._feature_vector, self._label))
 
 # abstract base class for defining predictors
 class Predictor:
@@ -67,6 +67,14 @@ class FeatureConverter():
         pass
     
     @abstractmethod
-    def testingInstanceSize(self):
+    def testingInstancesSize(self):
+        pass
+
+    @abstractmethod
+    def getTrainingLabel(self, index):
+        pass
+
+    @abstractmethod
+    def getTestingLabel(self, label):
         pass
 

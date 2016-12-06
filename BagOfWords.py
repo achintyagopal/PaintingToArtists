@@ -1,8 +1,13 @@
 from project_types import FeatureConverter, Instance
 import cv2
+from images import *
 import numpy as np
 
-def BagOfWords(FeatureConverter):
+class BagOfWords(FeatureConverter):
+
+    def __init__(self):
+        self.training_instances = None
+        self.testing_instances = None
 
     def createTrainingInstances(self, images, center_num = 800):
     	self.center_num = center_num
@@ -80,5 +85,11 @@ def BagOfWords(FeatureConverter):
     def trainingInstancesSize(self):
         return len(self.training_instances)
     
-    def testingInstanceSize(self):
+    def testingInstancesSize(self):
         return len(self.testing_instances)
+
+    def getTrainingLabel(self, index):
+        return self.training_instances[index].get_label()
+
+    def getTestingLabel(self, label):
+        return self.testing_instances[index].get_label()

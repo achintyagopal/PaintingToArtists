@@ -1,33 +1,30 @@
 import numpy as np
 from project_types import *
-
+from DualSVM import DualSVM
 
 class MultiSVM(Predictor):
 
-	def __init__(self, SVM_lam=1e-4, iterations = 5):
+	def __init__(self, lambda_fn = lambda x, y: x.dot(y) , SVM_lam=1e-4, iterations = 5):
 		self.svm = {}
 		self.lam = SVM_lam
 		self.iterations = iterations
+		self.lambda_fn = lambda_fn
 
 
 	def train(self, feature_converter):
 		labels = set()
-		instances = feature_converter.getTrainingInstances()
-		# for vector, label in instances:
-		for i in range(feature_converter.testingInstancesSize()):
-			vector, label = feature_converter.getTestingInstances(i)
+		for i in range(feature_converter.trainingInstancesSize()):
+			label = feature_converter.getTrainingLabel(i)
 			labels.add(label)
 
 		for l in labels:
-			self.svm[l] = DualSVM(l, self.lam, self.iterations)
+			self.svm[l] = DualSVM(l, lambda_fn, self.lam, self.iterations)
 			self.svm[l].train(feature_converter)
 
 	def predict(self, feature_converter):
 		labels = []
-		# instances = feature_converter.trainingInstancesSize()
 		for i in range(feature_converter.testingInstancesSize()):
-			instance = feature_converter.getTestingInstances(i)
-		# for instance in instances
+			instance = feature_converter.getTestingInstance(i)
 			max_label = None
 			max_val = None
 			for label, d_svm in self.svm.iteritems():

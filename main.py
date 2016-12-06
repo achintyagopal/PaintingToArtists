@@ -8,6 +8,10 @@ import numpy as np
 from project_types import *
 from images import *
 
+from ColorHistogram import ColorHistogram
+from BagOfWords import BagOfWords
+from MultiSVM import MultiSVM
+from structuredSVM import StructuredSVM
 
 def get_args():
 
@@ -23,7 +27,7 @@ def get_args():
                         help="The name of the model file to create/load.")
     parser.add_argument("--predictions-file", type=str, help="The predictions file to create.")
     parser.add_argument("--feature-algorithm", type=str, help="The name of the algorithm for training.")
-    parser.add_argument("--learning-algorithm", type=str, help="The name of the algorithm for training.")
+    parser.add_argument("--training-algorithm", type=str, help="The name of the algorithm for training.")
 
     args = parser.parse_args()
     check_args(args)
@@ -35,30 +39,30 @@ def check_args(args):
     if args.mode.lower() == "feature":
         if args.folder is None:
             raise Exception("--folder (folder with data) should be specified in mode \"feature\"")
-        if args.algorithm is None:
+        if args.feature_algorithm is None:
             raise Exception("--algorithm (feature extraction algorithm) should be specified in mode \"feature\"")
         if args.feature_file is None:
             raise Exception("--feature-file (save features) should be specified in mode \"feature\"")
         if args.feature_algorithm is None:
             raise Exception("--feature-algorithm should be specified in mode \"feature\"")
-        if args.model_file is None:
-            raise Exception("--model-file should be specified in mode \"feature\"")
     elif args.mode.lower() == "train":
-        if args.folder is None and args.data is None:
-            raise Exception("--data or --folder (load training features) should be specified in mode \"train\"")
+        if args.folder is None and args.feature_file is None:
+            raise Exception("--feature-file or --folder (load training features) should be specified in mode \"train\"")
         if args.folder is not None and args.feature_algorithm is None:
             raise Exception("--feature-algorithm should be specified in mode \"train\" when given folder")
-        if args.folder is None and args.feature_file is None:
-            raise Exception("--feature-file should be specified in mode \"test\" when not given folder")
+        if args.feature_file is not None and not os.path.exists(args.feature_file):
+            raise Exception("feature file specified by --feature-file does not exist.")
         if args.training_algorithm is None:
             raise Exception("--training-algorithm should be specified in mode \"train\"")
+        if args.model_file is None:
+            raise Exception("--model-file should be specified in mode \"train\"")
     else:
-        if args.folder is None and args.data is None:
-            raise Exception("--data or --folder (load training features) should be specified in mode \"test\"")
+        if args.folder is None and args.feature_file is None:
+            raise Exception("--feature-file or --folder (load training features) should be specified in mode \"train\"")
         if args.folder is not None and args.feature_algorithm is None:
             raise Exception("--feature-algorithm should be specified in mode \"test\" when given folder")
-        if args.folder is None and args.feature_file is None:
-            raise Exception("--feature-file should be specified in mode \"test\" when not given folder")
+        if args.feature_file is not None and not os.path.exists(args.feature_file):
+            raise Exception("feature file specified by --feature-file does not exist.")
         if args.predictions_file is None:
             raise Exception("--prediction-file should be specified in mode \"test\"")
         if args.model_file is None:
@@ -78,11 +82,12 @@ def get_files(folder_name, algorithm, args):
 
     imgs = []
     for folder in folders:
-        path = train_path + folder + '/'
+        path = folder_name + folder + '/'
         files = os.listdir(path)
         for file_str in files:
-            if os.path.isfile(os.path.join(path, file_str)):
-                imgs.append(os.path.join(path, file_str))
+            complete_file_str = str((os.path.join(path, file_str)))
+            if os.path.isfile(complete_file_str) and (complete_file_str.endswith('.jpg') or complete_file_str.endswith('.JPG')):
+                imgs.append((os.path.join(path, file_str), folder))
 
     return imgs
 
@@ -121,15 +126,17 @@ def get_instance_converter(algorithm, args):
     if algorithm == "color":
         return ColorHistogram()
     elif algorithm == "bow":
-        return BagOfWords()        
+        return BagOfWords()      
     return None
 
 # train algorithm on instances
-def train(feature_converter, algorithm, args):
-    if algorithm == "SVM":
+def train(algorithm, args):
+    if algorithm == "mc_svm":
         # create multiclass SVM model
-        return None
-    elif algorithm == "NeuralNetwork":
+        return MultiSVM()
+    elif algorithm == "struct_svm":
+        return StructuredSVM()
+    elif algorithm == "nn":
         # train a neural network
         return None
     return None
@@ -167,8 +174,8 @@ def main():
             feature_converter.createTrainingInstances(training_files)
 
         # train some model
-        predictor = train(feature_converter, args.training_algorithm, args)
-
+        predictor = train(args.training_algorithm, args)
+        predictor.train(feature_converter)
         # save the model
         try:
             with open(args.model_file, 'wb') as writer:
