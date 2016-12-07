@@ -15,7 +15,7 @@ A collection of various ML algorithms used to predict the artist of a Painting. 
 * Bag of Words
 * Color Histogram
 
-## Artisits
+## Artists
 * Dali
 * Monet
 * Picasso
