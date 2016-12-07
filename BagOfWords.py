@@ -20,8 +20,8 @@ class BagOfWords(FeatureConverter):
             img = read_color_image(img)
             keypoints = orb.detect(img, None)
             keypoints, descriptors = orb.compute(img, keypoints)
-            if des is None:
-            	des = []
+            if descriptors is None:
+            	descriptors = []
             img_descriptors.appends(descriptors)
             for i in descriptors:
             	master_descriptors.append(i)
@@ -59,8 +59,8 @@ class BagOfWords(FeatureConverter):
             keypoints = orb.detect(img, None)
             keypoints, descriptors = orb.compute(img, keypoints)
 
-            if des is None:
-            	des = []
+            if descriptors is None:
+            	descriptors = []
 
             histogram = np.zeros(self.center_num)
             for d in descriptors:
