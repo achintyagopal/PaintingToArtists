@@ -1,9 +1,10 @@
 import os
 import argparse
 import sys
-import pickle
+# import pickle
 import cv2
 import numpy as np
+import dill as pickle
 
 from project_types import *
 from images import *
@@ -28,6 +29,8 @@ def get_args():
     parser.add_argument("--predictions-file", type=str, help="The predictions file to create.")
     parser.add_argument("--feature-algorithm", type=str, help="The name of the algorithm for training.")
     parser.add_argument("--training-algorithm", type=str, help="The name of the algorithm for training.")
+    parser.add_argument("--iterations", type=int,
+                    help="The number of training iterations.", default=5)
 
     args = parser.parse_args()
     check_args(args)
@@ -83,6 +86,9 @@ def get_files(folder_name, algorithm, args):
     imgs = []
     for folder in folders:
         path = folder_name + folder + '/'
+        if not os.path.isdir(path):
+            continue
+            
         files = os.listdir(path)
         for file_str in files:
             complete_file_str = str((os.path.join(path, file_str)))
@@ -109,18 +115,26 @@ def load_data(filename):
 def write_predictions(predictor, feature_converter, predictions_file):
     labels = predictor.predict(feature_converter)
     try:
+        total = 0
+        correct = 0
         with open(predictions_file, 'w') as writer:
             for i in range(len(labels)):
                 label = labels[i]
-                instance = feature_converter.get_testing_instance(i)
-        
+                instance = feature_converter.getTestingInstance(i)
+                
                 writer.write(str(label))
                 writer.write(' ')
                 writer.write(instance.get_label())
                 writer.write('\n')
+
+                if str(label) == str(instance.get_label()):
+                    correct += 1
+                total +=1
     except IOError:
         raise Exception("Exception while opening/writing file for writing predicted labels: " + predictions_file)
+    # print correct/float(total)
 
+    print "Testing Accuracy: ", (correct / float(total) * 100), "%"
 
 def get_instance_converter(algorithm, args):
     if algorithm == "color":
@@ -135,7 +149,7 @@ def train(algorithm, args):
         # create multiclass SVM model
         return MultiSVM()
     elif algorithm == "struct_svm":
-        return StructuredSVM()
+        return StructuredSVM(args.iterations)
     elif algorithm == "nn":
         # train a neural network
         return None
@@ -182,7 +196,8 @@ def main():
                 pickle.dump(predictor, writer)
         except IOError:
             raise Exception("Exception while writing to the model file.")        
-        except pickle.PickleError:
+        except pickle.PickleError as err:
+            print err
             raise Exception("Exception while dumping pickle.")
             
     elif mode == "test":

@@ -4,7 +4,7 @@ from random import shuffle
 
 class StructuredSVM():
 
-    def __init__(self, lambda_fn = lambda x, y: x.dot(y) , SVM_lam=1e-4, iterations = 5):
+    def __init__(self, iterations = 5, SVM_lam=1e-4, lambda_fn = lambda x, y: x.dot(y)):
         self.svm = {}
         self.lam = SVM_lam
         self.iterations = iterations
@@ -34,7 +34,8 @@ class StructuredSVM():
         self.feature_converter = feature_converter
 
         t = 1
-        for _ in range(self.iterations):
+        for iteration in range(self.iterations):
+            print iteration
             instance_order = []
             for i in range(feature_converter.trainingInstancesSize()):
                 instance_order.append(i)
@@ -43,24 +44,39 @@ class StructuredSVM():
 
             for i in instance_order:
                 instance = feature_converter.getTrainingInstance(i)
-
+                instance_label = feature_converter.getTrainingLabel(i)
                 # find max score
                 max_index, max_score = self.score(instance)
                 self.alphas_all = self.alphas_all * (1 - 1.0/t)
                 learningRate  = 1.0 / (self.lam * t)
 
-                if self.labels[max_index] != str(instance.get_label()):
+                # print self.labels[max_index], str(instance.get_label())
+
+                if self.labels[max_index] != str(instance_label):
                     self.alphas_all[max_index][i] -= learningRate
-                    self.alphas_all[self.label_dict[instance.get_label()]][i] += learningRate
+                    self.alphas_all[self.label_dict[instance_label]][i] += learningRate
                 else:
                     if max_score < 1:
                         self.alphas_all[max_index][i] += learningRate
                 t += 1
 
 
+            total = 0
+            correct = 0
+            for i in instance_order:
+
+                instance = feature_converter.getTrainingInstance(i)
+                max_index, max_score = self.score(instance)
+
+                if self.labels[max_index] == str(instance.get_label()):
+                    correct += 1
+                total += 1
+
+            print "Training Accuracy for ", iteration, " iterations: ", (correct / float(total) * 100), "%"
+            self.predict(feature_converter)
+
     def score(self, instance):
         
-
         scores = [0] * len(self.alphas_all)
 
         for i in range(len(self.alphas_all[0])):
@@ -87,9 +103,15 @@ class StructuredSVM():
 
     def predict(self, feature_converter):
         labels = []
+        total = 0
+        correct = 0
         for i in range(feature_converter.testingInstancesSize()):
             instance = feature_converter.getTestingInstance(i)
-            instance = feature_converter.getTrainingInstance(i)
             max_index, max_score = self.score(instance)
             labels.append(self.labels[max_index])
+            if self.labels[max_index] == str(instance.get_label()):
+                correct += 1
+            total += 1
+
+        print "Testing Accuracy: ", (correct / float(total) * 100), "%"
         return labels

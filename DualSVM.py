@@ -25,7 +25,8 @@ class DualSVM(Predictor):
 
 			shuffle(instance_order)
 
-			for i in range(feature_converter.trainingInstancesSize()):
+			# for i in range(feature_converter.trainingInstancesSize()):
+			for i in instance_order:
 
 				instance = feature_converter.getTrainingInstance(i)
 				yBar =  self.score(instance)
@@ -67,9 +68,8 @@ class DualSVM(Predictor):
 		ret = 0
 		for i in range(len(self.alphas)):
 			if self.alphas[i] != 0:
-				training_instance = self.feature_converter.getTrainingInstance(i)
-				# ret += self.alphas[i] * vector.dot(training_instance.get_vector())
-            	ret += self.alphas[i] * self.lambda_fn(vector, training_instance.get_vector())
+				training_instance = self.feature_converter.getTrainingInstance(i).get_vector()
+				ret += self.alphas[i] * self.lambda_fn(vector, training_instance)
 
 		return ret
 
