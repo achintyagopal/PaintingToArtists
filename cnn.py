@@ -5,6 +5,7 @@ from scipy.ndimage.filters import convolve
 class CNN(Predictor):
     
     def __init__(self, input_size, iterations = 1, learning_rate = 1e-4):
+        self.contains_output = False
         self.learning_rate = learning_rate
         self.iterations = iterations
         self.output_size = []
@@ -13,6 +14,9 @@ class CNN(Predictor):
         self.layers = ['input']
 
     def add_convolution_layer(self, nodes, size):
+        if self.contains_output:
+            raise Exception ("Cannot add layers after output layers")
+
         x,y,c = self.last_output_size
         self.last_output_size = (x, y, nodes)
         self.output_size.append((x,y,nodes))
@@ -27,9 +31,15 @@ class CNN(Predictor):
         self.layers.append(layer)
 
     def add_relu_layer(self):
+        if self.contains_output:
+            raise Exception ("Cannot add layers after output layers")
+
         self.layers.append(['relu'])
 
     def add_pool_layer(self, shape):
+        if self.contains_output:
+            raise Exception ("Cannot add layers after output layers")
+
         sx, sy, sz = shape
         x,y,c = self.last_output_size
         self.last_output_size = (x/sx, y/sy, c/sz)
@@ -37,7 +47,11 @@ class CNN(Predictor):
 
         self.layers.append(['pool', shape])
 
-    def add_fc_layer(self, nodes):
+    def add_fc_output_layer(self, nodes):
+        if self.contains_output:
+            raise Exception ("Cannot have multiple output layers")
+
+        self.contains_output = True
         x,y,c = self.last_output_size
         self.last_output_size = (nodes,1,1)
         self.output_size.append((nodes, 1, 1))
@@ -49,6 +63,9 @@ class CNN(Predictor):
         self.layers.append(w)
 
     def train(self, feature_converter):
+
+        if not self.contains_output:
+            raise Exception("Must add output layer before training")
 
         self.labels = set()
         for i in range(feature_converter.trainingInstancesSize()):
@@ -130,7 +147,7 @@ class CNN(Predictor):
                             new_output.itemset((i,j,k), max_val)
                             locations.itemset((i,j,k), max_loc)
 
-                outputs.append([layer_type, last_output, locations])
+                outputs.append([layer_type, locations])
                 last_output = new_output
 
             elif layer_type == "fc":
@@ -165,7 +182,8 @@ class CNN(Predictor):
             if input_type == "conv":
                 pass
             elif input_type == "pool":
-                locations = input_i[2]
+                locations = input_i[1]
+
                 a,b,c = locations.shape
                 new_output = np.zeros((a,b,c))
                 for i in range(a):
@@ -186,7 +204,12 @@ class CNN(Predictor):
                                 last_output.itemset((i,j,k), 0)
 
             elif input_type == "fc":
-                pass
+                input_vector = input_i[1]
+                w = self.layers[-1][node_index]
+                last_output = w
+                w = w + constant * input_vector
+                self.layers[-1][node_index] = w
+                
             elif input_type == "input":
                 continue
             else:
@@ -194,4 +217,5 @@ class CNN(Predictor):
 
 
     def predict(self, feature_converter):
-        pass
+        if not self.contains_output:
+            raise Exception("Must add output layer before testing")
