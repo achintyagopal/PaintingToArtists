@@ -11,6 +11,7 @@ from images import *
 
 from ColorHistogram import ColorHistogram
 from BagOfWords import BagOfWords
+from HOG import HOG
 from MultiSVM import MultiSVM
 from structuredSVM import StructuredSVM
 
@@ -140,7 +141,9 @@ def get_instance_converter(algorithm, args):
     if algorithm == "color":
         return ColorHistogram()
     elif algorithm == "bow":
-        return BagOfWords()      
+        return BagOfWords()
+    elif algorithm == "hog":
+        return HOG()      
     return None
 
 # train algorithm on instances
