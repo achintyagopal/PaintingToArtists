@@ -11,9 +11,10 @@ A collection of various ML algorithms used to predict the artist of a Painting. 
 * Dual One vs. Rest SVM
 * Convolutional Neural Network (CNN)
 
-## Feature Vector Encoding
+## Feature Vector Encodings
 * Bag of Words
 * Color Histogram
+* Histogram of Oriented Gradients (HOG)
 
 ## Artists
 * Dali
