@@ -15,7 +15,9 @@ class HOG(FeatureConverter):
 		hog = cv2.HOGDescriptor()
 		instances = []
 		for img, label in images:
+			print img
 			img = read_color_image(img)
+			img = cv2.resize(img, (128, 128), interpolation = cv2.INTER_AREA)
 			descriptor = hog.compute(img)
 			if descriptor is None:
 				descriptor = []
@@ -30,7 +32,9 @@ class HOG(FeatureConverter):
 		hog = cv2.HOGDescriptor()
 		instances = []
 		for img, label in images:
+			print img
 			img = read_color_image(img)
+			img = cv2.resize(img, (128, 128), interpolation = cv2.INTER_AREA)
 			descriptor = hog.compute(img)
 			if descriptor is None:
 				descriptor = []
