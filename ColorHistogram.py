@@ -37,23 +37,21 @@ class ColorHistogram(FeatureConverter):
                 red = img.item((r,c,2))
 
                 encoding = 0
-                encoding += int(red / float(2 ** (self.bits / 3.0)))
+                encoding += int(red * (2 ** (self.bits / 3.0)) /256)
                 encoding <<= int(self.bits / 3.0)
-                encoding += int(green / float(2 ** (self.bits / 3.0)))
+                encoding += int(green * (2 ** (self.bits / 3.0)) /256)
                 encoding <<= int(self.bits / 3.0)
-                encoding += int(blue / float(2 ** (self.bits / 3.0)))
+                encoding += int(blue * (2 ** (self.bits / 3.0)) /256)
 
                 histogram[encoding] += 1
 
         return Instance(histogram, label)
 
     def getTrainingInstance(self, index):
-        # return self.__createInstances(self.training_images[index])
         return self.training_instances[index]
     
     def getTestingInstance(self, index):
         return self.testing_instances[index]
-        # return self.__createInstances(self.testing_images[index])
     
     def trainingInstancesSize(self):
         return len(self.training_instances)
