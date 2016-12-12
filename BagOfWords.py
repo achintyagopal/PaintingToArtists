@@ -6,12 +6,12 @@ import pickle
 
 class BagOfWords(FeatureConverter):
 
-    def __init__(self):
+    def __init__(self, center_num = 800):
         self.training_instances = None
         self.testing_instances = None
+        self.center_num = center_num
 
-    def createTrainingInstances(self, images, center_num = 800):
-    	self.center_num = center_num
+    def createTrainingInstances(self, images):
         instances = []
         img_descriptors = []
         master_descriptors = []
@@ -33,13 +33,13 @@ class BagOfWords(FeatureConverter):
         master_descriptors = np.float32(master_descriptors)
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
 
-        ret, labels, centers = cv2.kmeans(master_descriptors, center_num, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+        ret, labels, centers = cv2.kmeans(master_descriptors, self.center_num, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
         labels = labels.ravel()
 
         count = 0
         img_num = 0
         for img, label in images:
-            histogram = np.zeros(center_num)
+            histogram = np.zeros(self.center_num)
             feature_vector = img_descriptors[img_num]
             for f in xrange(len(feature_vector)):
                 index = count + f
