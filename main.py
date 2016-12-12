@@ -12,6 +12,7 @@ from images import *
 
 from ColorHistogram import ColorHistogram
 from BagOfWords import BagOfWords
+from HOG import HOG
 from MultiSVM import MultiSVM
 from structuredSVM import StructuredSVM
 from cnn import CNN

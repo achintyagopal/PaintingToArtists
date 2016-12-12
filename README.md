@@ -9,9 +9,14 @@ A collection of various ML algorithms used to predict the artist of a Painting. 
 ## ML Algorithms
 * Dual Structured SVM
 * Dual One vs. Rest SVM
-* Bag of Words
+* Convolutional Neural Network (CNN)
 
-## Artisits
+## Feature Vector Encodings
+* Bag of Words
+* Color Histogram
+* Histogram of Oriented Gradients (HOG)
+
+## Artists
 * Dali
 * Monet
 * Picasso
