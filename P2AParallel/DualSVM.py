@@ -79,6 +79,7 @@ class DualSVM(Predictor):
 
         total = 0
         correct = 0
+        # Parallelize!!
         for i in range(feature_converter.testingInstancesSize()):
             instance = feature_converter.getTestingInstance(i)
 

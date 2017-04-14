@@ -18,12 +18,15 @@ class MultiSVM(Predictor):
             labels.add(label)
         self.labels = list(labels)
 
+        # TODO: PARALLELIZE!!!
         for l in labels:
             self.svm[l] = DualSVM(l, self.lambda_fn, self.lam, self.iterations)
             self.svm[l].train(feature_converter)
+        ###
 
         print "Trained"
 
+        # Spin this off as separate method and parall it
         total = 0
         correct = 0
         for i in range(feature_converter.trainingInstancesSize()):
@@ -51,7 +54,7 @@ class MultiSVM(Predictor):
 
         total = 0
         correct = 0
-
+        # Parallelize this!!
         for i in range(feature_converter.testingInstancesSize()):
             instance = feature_converter.getTestingInstance(i)
             max_label = None
