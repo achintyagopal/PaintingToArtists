@@ -6,7 +6,7 @@ from images import *
 
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.layers import Convolution2D, MaxPooling2D
+from keras.layers import Conv2D, MaxPooling2D
 from keras.optimizers import SGD
 from keras.utils import np_utils
 from keras.callbacks import Callback
@@ -16,7 +16,8 @@ from keras.regularizers import l2
 def my_objective_function(y_true, y_pred):
     # use categorial cross entropy
     # basically normal cross entropy (> 0 -> 1, < 0 -> 0), multiply by y_true
-    return y_true * K.categorical_crossentropy(y_pred, (K.sign(y_true) + 1) / 2)
+    #return y_true * K.categorical_crossentropy(y_pred, (K.sign(y_true) + 1) / 2)
+    return K.abs(y_true[0][0]) * K.categorical_crossentropy(y_pred, K.sign(y_true) + 1) / 2.0
 
 class TestCallback(Callback):
     def __init__(self, testing_files):
@@ -97,17 +98,17 @@ class Keras_CNN():
 
     def __init__(self):
         self.model = Sequential()
-        self.model.add(Convolution2D(32, 5, 5, border_mode='same',
+        self.model.add(Conv2D(32, (5, 5), padding='same',
                         input_shape=(64,64, 3)))
         self.model.add(Activation('relu'))
-        self.model.add(Convolution2D(32, 5, 5))
+        self.model.add(Conv2D(32, (5, 5)))
         self.model.add(Activation('relu'))
         self.model.add(MaxPooling2D(pool_size=(2, 2)))
         self.model.add(Dropout(0.5))
 
-        self.model.add(Convolution2D(64, 3, 3, border_mode='same'))
+        self.model.add(Conv2D(64, (3, 3), padding='same'))
         self.model.add(Activation('relu'))
-        self.model.add(Convolution2D(64, 3, 3))
+        self.model.add(Conv2D(64, (3, 3)))
         self.model.add(Activation('relu'))
         self.model.add(MaxPooling2D(pool_size=(2, 2)))
         self.model.add(Dropout(0.5))
@@ -143,25 +144,27 @@ class Keras_CNN():
         variances = []
         count = 0
         for filename, label in files:
+            count += 1
+            if count % 1000 != 0:
+                continue
             print filename
             vector = read_color_image(filename)            
             x.append(vector)
             y.append(self.label_dict[label])
-            variances.append(np.std(vector.ravel()))
-
-
+            count += 1
+#            variances.append(np.std(vector.ravel()))
 
         x = np.array(x)
         y = np.array(y)
         z = np_utils.to_categorical(y, 6)
-        for i in range(len(variances)):
-            for j in range(6):
-                if j == y[i]:
-                    z[i][j] = variances[i]
-                else:
-                    z[i][j] = - variances[i]
+#        for i in range(len(variances)):
+#            for j in range(6):
+#                if j == y[i]:
+#                    z[i][j] = variances[i]
+#                else:
+#                    z[i][j] = - variances[i]
 
-        self.model.fit(x, z, nb_epoch=50, batch_size = 32, 
+        self.model.fit(x, z, epochs=50, batch_size = 32, 
             callbacks=[TestCallback(testing_files)])
 
 def get_files(folder_name):
