@@ -7,6 +7,8 @@ import numpy as np
 import dill as pickle
 import math
 import time
+import multiprocessing
+import ipyparallel
 
 from project_types import *
 from images import *
@@ -46,6 +48,9 @@ def get_args():
     
     parser.add_argument("--parallel", type=bool,
                     help="Parallel or Serial run.", default=True)
+
+    parser.add_argument("--procs", type=int,
+                    help="The number of processes to use.", default=multiprocessing.cpu_count())
 
     parser.add_argument("--platform", type=str,
                     help="Parallel Platform to run on. Note: if ipython please make sure to run ipcluster before start of program", 
