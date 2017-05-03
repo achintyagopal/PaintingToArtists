@@ -46,15 +46,19 @@ def get_args():
     parser.add_argument("--clusters", type=int,
                     help="The number of training iterations.", default=800)
     
-    parser.add_argument("--parallel", type=bool,
-                    help="Parallel or Serial run.", default=True)
+    parser.add_argument("--parallel", type=str,
+                    help="Parallel or Serial run.", default="True")
 
     parser.add_argument("--procs", type=int,
                     help="The number of processes to use.", default=multiprocessing.cpu_count())
 
     parser.add_argument("--platform", type=str,
-                    help="Parallel Platform to run on. Note: if ipython please make sure to run ipcluster before start of program", 
+                    help="Parallel Platform to run on. Note: if ipython please make sure to run ipcluster before start of program.", 
                     default="native", choices=["native", "ipython"])
+
+    parser.add_argument("--direct", type=str,
+                    help="True to use ipython direct view, False to use load-balanced view.", 
+                    default="True")
 
     args = parser.parse_args()
     check_args(args)
@@ -63,7 +67,7 @@ def get_args():
 
 
 def check_args(args):
-    if args.platform != "native" or args.platform != "ipython":
+    if args.platform != "native" and args.platform != "ipython":
         raise Exception("--platform (native/ipython) not given supported platform")
     if args.mode.lower() == "feature":
         if args.folder is None:
@@ -207,30 +211,48 @@ def main():
         testing_files = get_files(args.folder + '/test/', args.feature_algorithm, args)
 
         # parallelize
-        if not args.parallel:
+        if args.parallel.lower() == "false":
             feature_converter.createTrainingInstances(training_files)
             feature_converter.createTestingInstances(testing_files)
         elif args.platform == "native":
-            if algorithm == "color":
+            if args.feature_algorithm == "color":
                 bits = feature_converter.bits
                 train_inst = ColorHistogram.native_par_color(training_files, bits, args.procs)
                 test_inst = ColorHistogram.native_par_color(testing_files, bits, args.procs)
                 feature_converter.setTrainingInstances(train_inst)
                 feature_converter.setTestingInstances(test_inst)
-            elif algorithm == "bow":
+            elif args.feature_algorithm == "bow":
                 # TODO
                 BagOfWords.BagOfWords(args.clusters)
-            elif algorithm == "img":
+            elif args.feature_algorithm == "img":
                 feature_converter.createTrainingInstances(training_files)
                 feature_converter.createTestingInstances(testing_files)
-            elif algorithm == "hog":
+            elif args.feature_algorithm == "hog":
                 train_inst = HOG.native_par_hog(training_files, args.procs)
                 test_inst = HOG.native_par_hog(testing_files, args.procs)
                 feature_converter.setTrainingInstances(train_inst)
                 feature_converter.setTestingInstances(test_inst)
         elif args.platform == "ipython":
-            # run ipython
-            pass
+            direct = True
+            if args.direct == "false":
+                direct = False
+            if args.feature_algorithm == "color":
+                bits = feature_converter.bits
+                train_inst = ColorHistogram.ipython_par_color(training_files, bits, direct)
+                test_inst = ColorHistogram.ipython_par_color(testing_files, bits, direct)
+                feature_converter.setTrainingInstances(train_inst)
+                feature_converter.setTestingInstances(test_inst)
+            elif args.feature_algorithm == "bow":
+                # TODO
+                BagOfWords.BagOfWords(args.clusters)
+            elif args.feature_algorithm == "img":
+                feature_converter.createTrainingInstances(training_files)
+                feature_converter.createTestingInstances(testing_files)
+            elif args.feature_algorithm == "hog":
+                train_inst = HOG.ipython_par_hog(training_files, direct)
+                test_inst = HOG.ipython_par_hog(testing_files, direct)
+                feature_converter.setTrainingInstances(train_inst)
+                feature_converter.setTestingInstances(test_inst)
         else:
             raise Exception("Exception while attempting to run on platform")
 

@@ -34,7 +34,7 @@ class ColorHistogram(FeatureConverter):
             tmp.append(instance)
         end = time.time() - start
         self.testing_instances = tmp 
-        print "COLOR SERIAL: %d images -> %d" % (len(images), end)
+        print "COLOR SERIAL: %d images -> %f" % (len(images), end)
 
     def __createInstances(self, image):
         
@@ -42,8 +42,8 @@ class ColorHistogram(FeatureConverter):
         histogram = np.zeros(2 ** self.bits)
         img = read_color_image(img)
         rows, cols = img.shape[:2]
-        for r in range(rows):
-            for c in range(cols):
+        for r in xrange(rows):
+            for c in xrange(cols):
                 blue = img.item((r,c,0))
                 green = img.item((r,c,1))
                 red = img.item((r,c,2))
@@ -89,8 +89,8 @@ def local_color(image, bit):
     histogram = np.zeros(2 ** bit)
     img = read_color_image(img)
     rows, cols = img.shape[:2]
-    for r in range(rows):
-        for c in range(cols):
+    for r in xrange(rows):
+        for c in xrange(cols):
             blue = img.item((r,c,0))
             green = img.item((r,c,1))
             red = img.item((r,c,2))
@@ -112,19 +112,29 @@ def native_par_color(images, bits, procs):
     partial_local = partial(local_color, bit=bits)
     ret = p.map(partial_local, images)
     end = time.time() - start
-    print "COLOR NATIVE: %d images -> %d" % (len(images), end)
+    print "COLOR NATIVE: %d images -> %f" % (len(images), end)
     return ret
 
 
-def ipython_par_color(images, bits):
-    start = time.time()
-    c = Client()
-    dview = c[:]
-    partial_local = partial(local_color, bit=bits)
-    ret = dview.map_sync(partial_local, images)
-    end = time.time() - start
-    print "COLOR IPYTHON: %d images -> %d" % (len(images), end)
-    return ret
+def ipython_par_color(images, bits, direct):
+    if direct:
+        start = time.time()
+        c = Client()
+        dview = c[:]
+        partial_local = partial(local_color, bit=bits)
+        ret = dview.map_sync(partial_local, images)
+        end = time.time() - start
+        print "COLOR IPYTHON DIRECT: %d images -> %f" % (len(images), end)
+        return ret
+    else:
+        start = time.time()
+        c = Client()
+        dview = c.load_balanced_view()
+        partial_local = partial(local_color, bit=bits)
+        ret = dview.map(partial_local, images, block=True, chunksize=2)
+        end = time.time() - start
+        print "COLOR IPYTHON LBV: %d images -> %f" % (len(images), end)
+        return ret
 
 
 
