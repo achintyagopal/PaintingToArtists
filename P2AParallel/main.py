@@ -10,14 +10,13 @@ import time
 
 from project_types import *
 from images import *
-from ColorHistogram import ColorHistogram
-from BagOfWords import BagOfWords
-from HOG import HOG
-from MultiSVM import MultiSVM
-from structuredSVM import StructuredSVM
-from cnn import CNN
-from OriginalImg import OriginalImg
-from HOG import HOG
+import ColorHistogram #import ColorHistogram
+import BagOfWords #import BagOfWords
+import HOG #import HOG
+import MultiSVM #import MultiSVM
+import structuredSVM #import StructuredSVM
+import cnn #import CNN
+import OriginalImg #import OriginalImg
 
 def get_args():
 
@@ -32,14 +31,25 @@ def get_args():
     parser.add_argument("--model-file", type=str,
                         help="The name of the model file to create/load.")
     parser.add_argument("--predictions-file", type=str, help="The predictions file to create.")
-    parser.add_argument("--feature-algorithm", type=str, help="The name of the algorithm for training.")
-    parser.add_argument("--training-algorithm", type=str, help="The name of the algorithm for training.")
+    parser.add_argument("--feature-algorithm", type=str, 
+                    help="The name of the algorithm for training.", 
+                    choices=["color", "hog", "bow", "img"])
+    parser.add_argument("--training-algorithm", type=str, 
+                    help="The name of the algorithm for training.", 
+                    choices=["mc_svm", "struct_svm", "quad_kernel", "rbf_kernel", "cnn"])
     parser.add_argument("--iterations", type=int,
                     help="The number of training iterations.", default=5)
     parser.add_argument("--bits", type=int,
                     help="The number of training iterations.", default=12)
     parser.add_argument("--clusters", type=int,
                     help="The number of training iterations.", default=800)
+    
+    parser.add_argument("--parallel", type=bool,
+                    help="Parallel or Serial run.", default=True)
+
+    parser.add_argument("--platform", type=str,
+                    help="Parallel Platform to run on. Note: if ipython please make sure to run ipcluster before start of program", 
+                    default="native", choices=["native", "ipython"])
 
     args = parser.parse_args()
     check_args(args)
@@ -48,6 +58,8 @@ def get_args():
 
 
 def check_args(args):
+    if args.platform != "native" or args.platform != "ipython":
+        raise Exception("--platform (native/ipython) not given supported platform")
     if args.mode.lower() == "feature":
         if args.folder is None:
             raise Exception("--folder (folder with data) should be specified in mode \"feature\"")
@@ -145,29 +157,29 @@ def write_predictions(predictor, feature_converter, predictions_file):
 
 def get_instance_converter(algorithm, args):
     if algorithm == "color":
-        return ColorHistogram(args.bits)
+        return ColorHistogram.ColorHistogram(args.bits)
     elif algorithm == "bow":
-        return BagOfWords(args.clusters)
+        return BagOfWords.BagOfWords(args.clusters)
     elif algorithm == "img":
-        return OriginalImg()
+        return OriginalImg.OriginalImg()
     elif algorithm == "hog":
-        return HOG()
+        return HOG.HOG()
     return None
 
 # train algorithm on instances
 def train(algorithm, args):
     if algorithm == "mc_svm":
         # create multiclass SVM model
-        return MultiSVM()
+        return MultiSVM.MultiSVM()
     elif algorithm == "struct_svm":
-        return StructuredSVM(args.iterations)
+        return structuredSVM.StructuredSVM(args.iterations)
     elif algorithm == "quad_kernel":
-        return StructuredSVM(lambda_fn = lambda x,y: x.dot(y) ** 2)
+        return structuredSVM.StructuredSVM(lambda_fn = lambda x,y: x.dot(y) ** 2)
     elif algorithm == "rbf_kernel":
-        return StructuredSVM(lambda_fn = lambda x,y: math.e ** (-np.linalg.norm(x-y) ** 2/(2000)))
+        return structuredSVM.StructuredSVM(lambda_fn = lambda x,y: math.e ** (-np.linalg.norm(x-y) ** 2/(2000)))
     elif algorithm == "cnn":
         # train a neural network
-        nn = CNN((128,128,3))
+        nn = cnn.CNN((128,128,3))
         nn.add_convolution_layer(nodes = 32, size = (3,3))
         nn.add_relu_layer()
         nn.add_pool_layer(shape = (1,1,2))
@@ -188,8 +200,34 @@ def main():
         feature_converter = get_instance_converter(args.feature_algorithm, args)
         training_files = get_files(args.folder + '/train/', args.feature_algorithm, args)
         testing_files = get_files(args.folder + '/test/', args.feature_algorithm, args)
-        feature_converter.createTrainingInstances(training_files)
-        feature_converter.createTestingInstances(testing_files)
+
+        # parallelize
+        if not args.parallel:
+            feature_converter.createTrainingInstances(training_files)
+            feature_converter.createTestingInstances(testing_files)
+        elif args.platform == "native":
+            if algorithm == "color":
+                bits = feature_converter.bits
+                train_inst = ColorHistogram.native_par_color(training_files, bits, args.procs)
+                test_inst = ColorHistogram.native_par_color(testing_files, bits, args.procs)
+                feature_converter.setTrainingInstances(train_inst)
+                feature_converter.setTestingInstances(test_inst)
+            elif algorithm == "bow":
+                # TODO
+                BagOfWords.BagOfWords(args.clusters)
+            elif algorithm == "img":
+                feature_converter.createTrainingInstances(training_files)
+                feature_converter.createTestingInstances(testing_files)
+            elif algorithm == "hog":
+                train_inst = HOG.native_par_hog(training_files, args.procs)
+                test_inst = HOG.native_par_hog(testing_files, args.procs)
+                feature_converter.setTrainingInstances(train_inst)
+                feature_converter.setTestingInstances(test_inst)
+        elif args.platform == "ipython":
+            # run ipython
+            pass
+        else:
+            raise Exception("Exception while attempting to run on platform")
 
         try:
             with open(args.feature_file, 'wb') as writer:
@@ -206,10 +244,14 @@ def main():
         else:
             feature_converter = get_instance_converter(args.feature_algorithm, args)
             training_files = get_files(args.folder + '/train/', args.feature_algorithm, args)
+
+            #parallize
             feature_converter.createTrainingInstances(training_files)
 
         # train some model
+        # get model
         predictor = train(args.training_algorithm, args)
+        #send to right methods for parallel
         predictor.train(feature_converter)
         # write_predictions(predictor, feature_converter, args.model_file)
         # save the model

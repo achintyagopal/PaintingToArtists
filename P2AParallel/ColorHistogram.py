@@ -4,6 +4,9 @@ import cv2
 import numpy as np
 import time
 from multiprocessing import Pool
+# import threading
+# import Queue
+from ipyparallel import Client
 from functools import partial
 
 class ColorHistogram(FeatureConverter):
@@ -13,45 +16,25 @@ class ColorHistogram(FeatureConverter):
 
     def createTrainingInstances(self, images):
         start = time.time()
-        lst2 = []
+        tmp = list()
         for image in images:
             # print image[0]
             instance = self.__createInstances(image)
-            lst2.append(instance)
-        print "TRAIN: ", time.time() - start
+            tmp.append(instance)
+        end = time.time() - start
+        self.training_instances = tmp
+        print "COLOR SERIAL: %d images -> %d" % (len(images), end)
         
-        start = time.time()
-        lst1 = par(images, self.bits)
-        print "TRAIN: ", time.time() - start
-        
-        for i in range(len(lst1)):
-            if not np.array_equal(lst2[i].get_vector(), lst1[i].get_vector()):
-                print "FAIL"
-            if lst1[i].get_label() != lst2[i].get_label():
-                print "FAIL"
-        print "SUCCESS?"
-
-
     def createTestingInstances(self, images):
         start = time.time()
-        lst2 = []
+        tmp = list()
         for image in images:
             # print image[0]
             instance = self.__createInstances(image)
-            lst2.append(instance)
-        print "TEST: ", time.time() - start
-
-        start = time.time()
-        lst1 = par(images, self.bits)
-        print "TEST: ", time.time() - start
-
-        for i in range(len(lst1)):
-            if not np.array_equal(lst2[i].get_vector(), lst1[i].get_vector()):
-                print "FAIL"
-            if lst1[i].get_label() != lst2[i].get_label():
-                print "FAIL"
-        print "SUCCESS?"
-        # self.training_instances = 
+            tmp.append(instance)
+        end = time.time() - start
+        self.testing_instances = tmp 
+        print "COLOR SERIAL: %d images -> %d" % (len(images), end)
 
     def __createInstances(self, image):
         
@@ -59,7 +42,6 @@ class ColorHistogram(FeatureConverter):
         histogram = np.zeros(2 ** self.bits)
         img = read_color_image(img)
         rows, cols = img.shape[:2]
-        count = 0
         for r in range(rows):
             for c in range(cols):
                 blue = img.item((r,c,0))
@@ -95,15 +77,18 @@ class ColorHistogram(FeatureConverter):
     def getTestingLabel(self, label):
         return self.testing_instances[index].get_label()
 
+    def setTestingInstances(self, inst):
+        self.testing_instances = inst
+
+    def setTrainingInstances(self, inst):
+        self.training_instances = inst
 
 
-def local(image, bit):
+def local_color(image, bit):
     img, label = image
-    # print img
     histogram = np.zeros(2 ** bit)
     img = read_color_image(img)
     rows, cols = img.shape[:2]
-    count = 0
     for r in range(rows):
         for c in range(cols):
             blue = img.item((r,c,0))
@@ -118,13 +103,89 @@ def local(image, bit):
             encoding += int(blue * (2 ** (bit / 3.0)) /256)
 
             histogram[encoding] += 1
-
     return Instance(histogram, label)
 
-def par(images, bits):
-    p = Pool()
-    # bits = [bits] * len(images)
-    print bits
-    partial_local = partial(local, bit=bits)
-    return p.map(partial_local, images)
 
+def native_par_color(images, bits, procs):
+    start = time.time()
+    p = Pool(procs)
+    partial_local = partial(local_color, bit=bits)
+    ret = p.map(partial_local, images)
+    end = time.time() - start
+    print "COLOR NATIVE: %d images -> %d" % (len(images), end)
+    return ret
+
+
+def ipython_par_color(images, bits):
+    start = time.time()
+    c = Client()
+    dview = c[:]
+    partial_local = partial(local_color, bit=bits)
+    ret = dview.map_sync(partial_local, images)
+    end = time.time() - start
+    print "COLOR IPYTHON: %d images -> %d" % (len(images), end)
+    return ret
+
+
+
+
+
+    # partial_local = partial(localThr, bit=bits)
+    # threads = []
+    # q = Queue.Queue()
+    # start = time.time()
+    
+    # for i in range(len(images)):
+    #     t = threading.Thread(target=partial_local, args=(images[i],q,))
+    #     threads.append(t)
+    #     t.start()
+
+    # for i in threads:
+    #     i.join()    
+    # print "JLTH", time.time() - start
+    # print q.qsize()
+
+    # c = Client()
+    # # print c.ids
+    # dview = c[:]
+    # # dview.push(HOGDESC)
+    # # with dview.sync_imports():
+    #     # import sys
+    #     # sys.path[:] = ["/home/bill/Desktop/PaintingToArtists/P2AParallel"]
+    # # print "LOC", sys.path
+    # # print dview.map_sync(par, range(1))
+    # partial_local = partial(local, bit=bits)
+    # start = time.time()
+    # ret = dview.map_sync(partial_local, images)
+    # print "DIRECT:", time.time() - start
+    # dview = c.load_balanced_view()
+    # start = time.time()
+    # ret = dview.map_sync(partial_local, images)
+    # print "LB", time.time() - start
+
+    # print ret
+    # return list(q.queue)
+
+# def localThr(image, q, bit):
+#     img, label = image
+#     # print img
+#     histogram = np.zeros(2 ** bit)
+#     img = read_color_image(img)
+#     rows, cols = img.shape[:2]
+#     count = 0
+#     for r in range(rows):
+#         for c in range(cols):
+#             blue = img.item((r,c,0))
+#             green = img.item((r,c,1))
+#             red = img.item((r,c,2))
+
+#             encoding = 0
+#             encoding += int(red * (2 ** (bit / 3.0)) /256)
+#             encoding <<= int(bit / 3.0)
+#             encoding += int(green * (2 ** (bit / 3.0)) /256)
+#             encoding <<= int(bit / 3.0)
+#             encoding += int(blue * (2 ** (bit / 3.0)) /256)
+
+#             histogram[encoding] += 1
+
+#     q.put(Instance(histogram, label))
