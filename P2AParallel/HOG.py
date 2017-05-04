@@ -104,48 +104,73 @@ def local_hog(image):
 
 
 def native_par_hog(images, procs):
-	start = time.time()
 	p = Pool(procs)
-	ret = p.map(local_hog, images, chunksize=2)
-	# ret = map(local_hog, images)
+
+	start = time.time()
+	results = [p.apply(local_hog, args=(i,)) for i in images]
 	end = time.time() - start
-	print "HOG NATIVE: %d images -> %f" % (len(images), end)
+	print "HOG NATIVE APP: %d images -> %f" % (len(results), end)
+
+	start = time.time()
+	ret = p.map(local_hog, images, chunksize=2)
+	end = time.time() - start
+	print "HOG NATIVE MAP: %d images -> %f" % (len(ret), end)
+	
+	start = time.time()
+	resu = [p.apply_async(local_hog, args=(i,)) for i in images]
+	output = [r.get() for r in resu]
+	end = time.time() - start
+	print "HOG NATIVE ASY: %d images -> %f" % (len(output), end)
 	return ret
 
 
 def ipython_par_hog(images, direct):
 	if direct:
-		start = time.time()
-		# ipp.register_joblib_backend()
 		c = Client()
 		dview = c[:]
-		# dview.register_joblib_backend()
-		# asyn_ret = list()
-		# for i in images:
-			# ret = dview.map(local_hog, images, block=False, chunksize=100)
-			# ret = dview.apply_async(local_hog, i)
-			# asyn_ret.append(ret)
-		# c.wait(asyn_ret)
-		# ch = int(len(images)/3.0)
+		dview.block = False
+		num_clients = len(c.ids)
+
+		start = time.time()
+		ret = [c[i % num_clients].apply_sync(local_hog, images[i]) for i in xrange(len(images))]
+		end = time.time() - start
+		print "HOG IPYTHON DIRECT APP: %d images -> %f" % (len(ret), end)
+
+
+		start = time.time()
 		ret = dview.map_sync(local_hog, images)
 		end = time.time() - start
-		# print ret
-		print "HOG IPYTHON DIRECT: %d images -> %f" % (len(ret), end)
+		print "HOG IPYTHON DIRECT MAP: %d images -> %f" % (len(ret), end)
+
+		start = time.time()
+		ret = [c[i % num_clients].apply_async(local_hog, images[i]) for i in xrange(len(images))]
+		output = [r.get() for r in ret]
+		end = time.time() - start
+		print "HOG IPYTHON DIRECT ASY: %d images -> %f" % (len(output), end)
+
 		return ret
 	else:
-		start = time.time()
 		c = Client()
-		# num = int(len(images) / float(len(c.ids)))
-		# ipp.register_joblib_backend()
 		dview = c.load_balanced_view()
-		# asyn_ret = list()
-		# for i in images:
-		ret = dview.map_sync(local_hog, images, chunksize=int(len(images) / float(len(c.ids))))
-			# ret = dview.apply_async(local_hog, i)
-			# asyn_ret.append(ret)
-		# c.wait(asyn_ret)
+		dview.block = False
+		num_clients = len(c.ids)
+		
+		start = time.time()
+		ret = [dview.apply_sync(local_hog, i) for i in images]
 		end = time.time() - start
-		print "HOG IPYTHON LBV: %d images -> %f" % (len(images), end)
+		print "HOG IPYTHON LBV APP: %d images -> %f" % (len(ret), end)
+
+		start = time.time()
+		ret = dview.map_sync(local_hog, images, chunksize=2)
+		end = time.time() - start
+		print "HOG IPYTHON LBV MAP: %d images -> %f" % (len(ret), end)
+		
+		start = time.time()
+		ret = [dview.apply_async(local_hog, i) for i in images]
+		# dview.wait(ret)
+		output = [r.get() for r in ret]
+		end = time.time() - start
+		print "HOG IPYTHON LBV ASY: %d images -> %f" % (len(ret), end)
 		return ret
 
 # #PP
