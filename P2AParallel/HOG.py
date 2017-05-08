@@ -4,8 +4,8 @@ from images import *
 import cv2
 from multiprocessing import Pool
 # from joblib import Parallel, delayed
-# from ipyparallel import Client
-# import ipyparallel as ipp
+from ipyparallel import Client
+import ipyparallel as ipp
 from functools import partial
 # import distributed as dask
 # import threading
@@ -180,7 +180,7 @@ def native_par_hog(images, procs):
 	# 		raise Exception()
 	return ret3
 
-"""
+
 def ipython_partition(images, direct, n):
 	c = Client()
 	partitions = [images[i:i + n] for i in range(0, len(images), n)]
@@ -298,4 +298,3 @@ def ipython_par_hog(images, direct):
 		# 	if ret1[i].get_label() != ret2[i].get_label() or ret2[i].get_label() != ret3[i].get_label():
 		# 		raise Exception()
 		return ret3
-"""

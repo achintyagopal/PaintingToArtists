@@ -7,7 +7,7 @@ from multiprocessing import Pool
 # import threading
 # import Queue
 import itertools
-# from ipyparallel import Client
+from ipyparallel import Client
 from functools import partial
 
 class ColorHistogram(FeatureConverter):
@@ -183,7 +183,7 @@ def native_partition(images, bits, procs, n):
     print "COLOR NATIVE ASY: %d images -> %f" % (len(ret3), end)
     return ret3
 
-"""
+
 def ipython_par_color(images, bits, direct):
     c = Client()   
     partial_local = partial(local_color, bit=bits)
@@ -307,4 +307,3 @@ def ipython_partition(images, bits, direct, n):
         #         raise Exception()
         return ret3
 
-"""
