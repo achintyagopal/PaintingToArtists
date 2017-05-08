@@ -2,7 +2,7 @@
 
 ITER=20
 
-feature="hog"
+feature="color"
 algorithm="struct_svm"
 
 printf "FEATURE: "
@@ -12,11 +12,13 @@ printf "ALGORITHM: "
 printf $algorithm
 printf "\n"
 
+
+
 # # NATIVE
 # python main.py --mode feature --folder ../data --procs 1 --feature-file $feature.feature.file --feature-algorithm $feature
-# python main.py --mode feature --folder ../data --procs 2 --feature-file $feature.feature.file --feature-algorithm $feature
-python main.py --mode feature --partition true --platform ipython --num_parts 10 --folder ../data --procs 3 --feature-file $feature.feature.file --feature-algorithm $feature
-python main.py --mode feature --partition true --platform ipython --direct false --num_parts 10 --folder ../data --procs 3 --feature-file $feature.feature.file --feature-algorithm $feature
+python main.py --mode feature --folder ../data --procs 3 --feature-file $feature.feature.file --feature-algorithm $feature
+# python main.py --mode feature --partition true --platform ipython --num_parts 10 --folder ../data --procs 3 --feature-file $feature.feature.file --feature-algorithm $feature
+# python main.py --mode feature --partition true --platform ipython --direct false --num_parts 10 --folder ../data --procs 3 --feature-file $feature.feature.file --feature-algorithm $feature
 # printf "pypy"
 # printf "new data\n"
 # python main.py --mode feature --folder ../cv --procs 1 --feature-file $feature.feature.file --feature-algorithm $feature

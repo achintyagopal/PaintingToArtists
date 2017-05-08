@@ -57,7 +57,7 @@ def get_args():
                     default="native", choices=["native", "ipython"])
 
     parser.add_argument("--partition", type=str,
-                    help="Whether to partition image list", default="True")
+                    help="Whether to partition image list", default="False")
     parser.add_argument("--num_parts", type=int, 
                     help="Number of images per partition", default="1")
 
@@ -224,8 +224,12 @@ def main():
                 bits = feature_converter.bits
                 train_inst = list()
                 test_inst = list()
-                train_inst = ColorHistogram.native_par_color(training_files, bits, args.procs)
-                test_inst = ColorHistogram.native_par_color(testing_files, bits, args.procs)
+                if args.partition.lower() == "false":
+                    train_inst = ColorHistogram.native_par_color(training_files, bits, args.procs)
+                    test_inst = ColorHistogram.native_par_color(testing_files, bits, args.procs)
+                else:
+                    train_inst = ColorHistogram.native_partition(training_files, bits, args.procs)
+                    test_inst = ColorHistogram.native_partition(testing_files, bits, args.procs)
                 feature_converter.setTrainingInstances(train_inst)
                 feature_converter.setTestingInstances(test_inst)
             elif args.feature_algorithm == "bow":
@@ -251,9 +255,14 @@ def main():
                 direct = False
             if args.feature_algorithm == "color":
                 bits = feature_converter.bits
-
-                train_inst = ColorHistogram.ipython_par_color(training_files, bits, direct)
-                test_inst = ColorHistogram.ipython_par_color(testing_files, bits, direct)
+                train_inst = list()
+                test_inst = list()
+                if args.partition.lower() == "false":
+                    train_inst = ColorHistogram.ipython_par_color(training_files, bits, direct)
+                    test_inst = ColorHistogram.ipython_par_color(testing_files, bits, direct)
+                else:
+                    train_inst = ColorHistogram.ipython_partition(training_files, bits, direct, args.num_parts)
+                    test_inst = ColorHistogram.ipython_partition(testing_files, bits, direct, args.num_parts)
                 feature_converter.setTrainingInstances(train_inst)
                 feature_converter.setTestingInstances(test_inst)
             elif args.feature_algorithm == "bow":

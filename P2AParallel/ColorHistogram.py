@@ -6,6 +6,7 @@ import time
 from multiprocessing import Pool
 # import threading
 # import Queue
+import itertools
 from ipyparallel import Client
 from functools import partial
 
@@ -105,15 +106,39 @@ def local_color(image, bit):
             histogram[encoding] += 1
     return Instance(histogram, label)
 
+def local_color_parition(images, bit):
+    inst = list()
+    for image in images:
+        img, label = image
+        histogram = np.zeros(2 ** bit)
+        img = read_color_image(img)
+        rows, cols = img.shape[:2]
+        for r in xrange(rows):
+            for c in xrange(cols):
+                blue = img.item((r,c,0))
+                green = img.item((r,c,1))
+                red = img.item((r,c,2))
+
+                encoding = 0
+                encoding += int(red * (2 ** (bit / 3.0)) /256)
+                encoding <<= int(bit / 3.0)
+                encoding += int(green * (2 ** (bit / 3.0)) /256)
+                encoding <<= int(bit / 3.0)
+                encoding += int(blue * (2 ** (bit / 3.0)) /256)
+
+                histogram[encoding] += 1
+        inst.append(Instance(histogram, label))
+    return inst
+
 
 def native_par_color(images, bits, procs):
     p = Pool(procs)
     partial_local = partial(local_color, bit=bits)
     
-    start = time.time()
-    ret1 = [p.apply(partial_local, args=(i,)) for i in images]
-    end = time.time() - start
-    print "COLOR NATIVE APP: %d images -> %f" % (len(ret1), end)
+    # start = time.time()
+    # ret1 = [p.apply(partial_local, args=(i,)) for i in images]
+    # end = time.time() - start
+    # print "COLOR NATIVE APP: %d images -> %f" % (len(ret1), end)
 
     start = time.time()
     ret2 = p.map(partial_local, images, chunksize=2)
@@ -127,13 +152,36 @@ def native_par_color(images, bits, procs):
     print "COLOR NATIVE ASY: %d images -> %f" % (len(ret3), end)
 
     # serial equivalence
-    for i in range(len(ret1)):
-        if not np.array_equal(ret2[i].get_vector(),  ret1[i].get_vector()) or not np.array_equal(ret2[i].get_vector(),  ret3[i].get_vector()):
-            raise Exception()
-        if ret1[i].get_label() != ret2[i].get_label() or ret2[i].get_label() != ret3[i].get_label():
-            raise Exception()
+    # for i in range(len(ret1)):
+    #     if not np.array_equal(ret2[i].get_vector(),  ret1[i].get_vector()) or not np.array_equal(ret2[i].get_vector(),  ret3[i].get_vector()):
+    #         raise Exception()
+    #     if ret1[i].get_label() != ret2[i].get_label() or ret2[i].get_label() != ret3[i].get_label():
+    #         raise Exception()
     return ret3
 
+def native_partition(images, bits, procs, n):
+    p = Pool(procs)
+    partial_local = partial(local_color_partition, bit=bits)
+    partitions = [images[i:i + n] for i in range(0, len(images), n)]
+    
+    # start = time.time()
+    # ret1 = [p.apply(partial_local, args=(i,)) for i in partitions]
+    # end = time.time() - start
+    # print "COLOR NATIVE APP: %d images -> %f" % (len(ret1), end)
+
+    start = time.time()
+    ret2 = p.map(partial_local, partitions)
+    end = time.time() - start
+    ret2 = list(itertools.chain.from_iterable(ret2))
+    print "COLOR NATIVE MAP: %d images -> %f" % (len(ret2), end)
+    
+    start = time.time()
+    resu = [p.apply_async(partial_local, args=(i,)) for i in partitions]
+    ret3 = [r.get() for r in resu]
+    end = time.time() - start
+    ret3 = list(itertools.chain.from_iterable(ret3))
+    print "COLOR NATIVE ASY: %d images -> %f" % (len(ret3), end)
+    return ret3
 
 
 def ipython_par_color(images, bits, direct):
@@ -145,10 +193,10 @@ def ipython_par_color(images, bits, direct):
         dview.block = False
         num_clients = len(c.ids)
 
-        start = time.time()
-        ret1 = [c[i % num_clients].apply_sync(partial_local, images[i]) for i in xrange(len(images))]
-        end = time.time() - start
-        print "COLOR IPYTHON DIRECT APP: %d images -> %f" % (len(ret1), end)
+        # start = time.time()
+        # ret1 = [c[i % num_clients].apply_sync(partial_local, images[i]) for i in xrange(len(images))]
+        # end = time.time() - start
+        # print "COLOR IPYTHON DIRECT APP: %d images -> %f" % (len(ret1), end)
 
 
         start = time.time()
@@ -162,20 +210,20 @@ def ipython_par_color(images, bits, direct):
         end = time.time() - start
         print "COLOR IPYTHON DIRECT ASY: %d images -> %f" % (len(ret3), end)
         
-        for i in range(len(ret1)):
-            if not np.array_equal(ret2[i].get_vector(),  ret1[i].get_vector()) or not np.array_equal(ret2[i].get_vector(),  ret3[i].get_vector()):
-                raise Exception()
-            if ret1[i].get_label() != ret2[i].get_label() or ret2[i].get_label() != ret3[i].get_label():
-                raise Exception()
+        # for i in range(len(ret1)):
+        #     if not np.array_equal(ret2[i].get_vector(),  ret1[i].get_vector()) or not np.array_equal(ret2[i].get_vector(),  ret3[i].get_vector()):
+        #         raise Exception()
+        #     if ret1[i].get_label() != ret2[i].get_label() or ret2[i].get_label() != ret3[i].get_label():
+        #         raise Exception()
         return ret3
     else:
         dview = c.load_balanced_view()
         dview.block = False
         
-        start = time.time()
-        ret1 = [dview.apply_sync(partial_local, i) for i in images]
-        end = time.time() - start
-        print "COLOR IPYTHON LBV APP: %d images -> %f" % (len(ret1), end)
+        # start = time.time()
+        # ret1 = [dview.apply_sync(partial_local, i) for i in images]
+        # end = time.time() - start
+        # print "COLOR IPYTHON LBV APP: %d images -> %f" % (len(ret1), end)
 
         start = time.time()
         ret2 = dview.map_sync(partial_local, images, chunksize=2)
@@ -188,92 +236,74 @@ def ipython_par_color(images, bits, direct):
         end = time.time() - start
         print "COLOR IPYTHON LBV ASY: %d images -> %f" % (len(ret3), end)
         
-        for i in range(len(ret1)):
-            if not np.array_equal(ret2[i].get_vector(),  ret1[i].get_vector()) or not np.array_equal(ret2[i].get_vector(),  ret3[i].get_vector()):
-                raise Exception()
-            if ret1[i].get_label() != ret2[i].get_label() or ret2[i].get_label() != ret3[i].get_label():
-                raise Exception()
+        # for i in range(len(ret1)):
+        #     if not np.array_equal(ret2[i].get_vector(),  ret1[i].get_vector()) or not np.array_equal(ret2[i].get_vector(),  ret3[i].get_vector()):
+        #         raise Exception()
+        #     if ret1[i].get_label() != ret2[i].get_label() or ret2[i].get_label() != ret3[i].get_label():
+        #         raise Exception()
         return ret3
 
-    # if direct:
-    #     start = time.time()
-    #     c = Client()
-    #     dview = c[:]
-    #     partial_local = partial(local_color, bit=bits)
-    #     ret = dview.map_sync(partial_local, images)
-    #     end = time.time() - start
-    #     print "COLOR IPYTHON DIRECT: %d images -> %f" % (len(images), end)
-    #     return ret
-    # else:
-    #     start = time.time()
-    #     c = Client()
-    #     dview = c.load_balanced_view()
-    #     partial_local = partial(local_color, bit=bits)
-    #     ret = dview.map(partial_local, images, block=True, chunksize=2)
-    #     end = time.time() - start
-    #     print "COLOR IPYTHON LBV: %d images -> %f" % (len(images), end)
-    #     return ret
-
-
-
-
-
-    # partial_local = partial(localThr, bit=bits)
-    # threads = []
-    # q = Queue.Queue()
-    # start = time.time()
+def ipython_partition(images, bits, direct, n):
+    c = Client()   
+    partial_local = partial(local_color_partition, bit=bits)
+    partitions = [images[i:i + n] for i in range(0, len(images), n)]
     
-    # for i in range(len(images)):
-    #     t = threading.Thread(target=partial_local, args=(images[i],q,))
-    #     threads.append(t)
-    #     t.start()
+    if direct:
+        dview = c[:]
+        dview.block = False
+        num_clients = len(c.ids)
 
-    # for i in threads:
-    #     i.join()    
-    # print "JLTH", time.time() - start
-    # print q.qsize()
+        # start = time.time()
+        # ret1 = [c[i % num_clients].apply_sync(partial_local, partitions[i]) for i in xrange(len(partitions))]
+        # end = time.time() - start
+        # print "COLOR IPYTHON DIRECT APP: %d images -> %f" % (len(ret1), end)
 
-    # c = Client()
-    # # print c.ids
-    # dview = c[:]
-    # # dview.push(HOGDESC)
-    # # with dview.sync_imports():
-    #     # import sys
-    #     # sys.path[:] = ["/home/bill/Desktop/PaintingToArtists/P2AParallel"]
-    # # print "LOC", sys.path
-    # # print dview.map_sync(par, range(1))
-    # partial_local = partial(local, bit=bits)
-    # start = time.time()
-    # ret = dview.map_sync(partial_local, images)
-    # print "DIRECT:", time.time() - start
-    # dview = c.load_balanced_view()
-    # start = time.time()
-    # ret = dview.map_sync(partial_local, images)
-    # print "LB", time.time() - start
 
-    # print ret
-    # return list(q.queue)
+        start = time.time()
+        ret2 = dview.map_sync(partial_local, images)
+        end = time.time() - start
+        ret2 = list(itertools.chain.from_iterable(ret2))
+        print "COLOR IPYTHON DIRECT MAP: %d images -> %f" % (len(ret2), end)
 
-# def localThr(image, q, bit):
-#     img, label = image
-#     # print img
-#     histogram = np.zeros(2 ** bit)
-#     img = read_color_image(img)
-#     rows, cols = img.shape[:2]
-#     count = 0
-#     for r in range(rows):
-#         for c in range(cols):
-#             blue = img.item((r,c,0))
-#             green = img.item((r,c,1))
-#             red = img.item((r,c,2))
+        start = time.time()
+        ret = [c[i % num_clients].apply_async(partial_local, partitions[i]) for i in xrange(len(partitions))]
+        ret3 = [r.get() for r in ret]
+        end = time.time() - start
+        ret3 = list(itertools.chain.from_iterable(ret3))
+        print "COLOR IPYTHON DIRECT ASY: %d images -> %f" % (len(ret3), end)
+        
+        # for i in range(len(ret1)):
+        #     if not np.array_equal(ret2[i].get_vector(),  ret1[i].get_vector()) or not np.array_equal(ret2[i].get_vector(),  ret3[i].get_vector()):
+        #         raise Exception()
+        #     if ret1[i].get_label() != ret2[i].get_label() or ret2[i].get_label() != ret3[i].get_label():
+        #         raise Exception()
+        return ret3
+    else:
+        dview = c.load_balanced_view()
+        dview.block = False
+        
+        # start = time.time()
+        # ret1 = [dview.apply_sync(partial_local, i) for i in partitions]
+        # end = time.time() - start
+        # print "COLOR IPYTHON LBV APP: %d images -> %f" % (len(ret1), end)
 
-#             encoding = 0
-#             encoding += int(red * (2 ** (bit / 3.0)) /256)
-#             encoding <<= int(bit / 3.0)
-#             encoding += int(green * (2 ** (bit / 3.0)) /256)
-#             encoding <<= int(bit / 3.0)
-#             encoding += int(blue * (2 ** (bit / 3.0)) /256)
+        start = time.time()
+        ret2 = dview.map_sync(partial_local, partitions)
+        end = time.time() - start
+        ret2 = list(itertools.chain.from_iterable(ret2))
+        print "COLOR IPYTHON LBV MAP: %d images -> %f" % (len(ret2), end)
+        
+        start = time.time()
+        ret = [dview.apply_async(partial_local, i) for i in partitions]
+        ret3 = [r.get() for r in ret]
+        end = time.time() - start
+        ret3 = list(itertools.chain.from_iterable(ret3))
+        print "COLOR IPYTHON LBV ASY: %d images -> %f" % (len(ret3), end)
+        
+        # for i in range(len(ret1)):
+        #     if not np.array_equal(ret2[i].get_vector(),  ret1[i].get_vector()) or not np.array_equal(ret2[i].get_vector(),  ret3[i].get_vector()):
+        #         raise Exception()
+        #     if ret1[i].get_label() != ret2[i].get_label() or ret2[i].get_label() != ret3[i].get_label():
+        #         raise Exception()
+        return ret3
 
-#             histogram[encoding] += 1
-
-#     q.put(Instance(histogram, label))

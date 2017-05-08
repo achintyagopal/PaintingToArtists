@@ -11,6 +11,7 @@ import distributed as dask
 # import threading
 # import Queue
 import time
+import itertools
 # from numba import jit
 # import pp
 
@@ -123,49 +124,36 @@ def native_partition(images, procs, n):
 	p = Pool(procs)
 	partitions = [images[i:i + n] for i in range(0, len(images), n)]
 
-
 	start = time.time()
 	ret1 = [p.apply(local_par_hog, args=(i,)) for i in partitions]
 	end = time.time() - start
+	ret1 = list(itertools.chain.from_iterable(ret1))
 	print "HOG NATIVE APP: %d images -> %f" % (len(ret1), end)
 
 	start = time.time()
 	ret2 = p.map(local_par_hog, partitions)
 	end = time.time() - start
+	ret2 = list(itertools.chain.from_iterable(ret2))
 	print "HOG NATIVE MAP: %d images -> %f" % (len(ret2), end)
 	
 	start = time.time()
 	resu = [p.apply_async(local_par_hog, args=(i,)) for i in partitions]
 	ret3 = [r.get() for r in resu]
 	end = time.time() - start
+	ret3 = list(itertools.chain.from_iterable(ret3))
 	print "HOG NATIVE ASY: %d images -> %f" % (len(ret3), end)
 	
-	# for r in ret1:
-		# print len(r)
 	# serial equivalence
 	# for i in range(len(ret1)):
 	# 	if not np.array_equal(ret2[i].get_vector(),  ret1[i].get_vector()) or not np.array_equal(ret2[i].get_vector(),  ret3[i].get_vector()):
 	# 		raise Exception()
 	# 	if ret1[i].get_label() != ret2[i].get_label() or ret2[i].get_label() != ret3[i].get_label():
 	# 		raise Exception()
-	# return ret3
+	return ret3
 
 
 
 def native_par_hog(images, procs):
-	# num_per_call = int(len(images) / float(procs))
-	# print num_per_call
-	# nat_partition(images, procs, num_per_call)
-	# print "1"
-	# nat_partition(images, procs, 1)
-	# print "2"
-	# nat_partition(images, procs, 2)
-	# print "10"
-	# nat_partition(images, procs, 10)
-	# print "50"
-	# nat_partition(images, procs, 50)
-	# print "100"
-	# nat_partition(images, procs, 100)
 	p = Pool(procs)
 
 	start = time.time()
@@ -185,11 +173,11 @@ def native_par_hog(images, procs):
 	print "HOG NATIVE ASY: %d images -> %f" % (len(ret3), end)
 	
 	# serial equivalence
-	for i in range(len(ret1)):
-		if not np.array_equal(ret2[i].get_vector(),  ret1[i].get_vector()) or not np.array_equal(ret2[i].get_vector(),  ret3[i].get_vector()):
-			raise Exception()
-		if ret1[i].get_label() != ret2[i].get_label() or ret2[i].get_label() != ret3[i].get_label():
-			raise Exception()
+	# for i in range(len(ret1)):
+	# 	if not np.array_equal(ret2[i].get_vector(),  ret1[i].get_vector()) or not np.array_equal(ret2[i].get_vector(),  ret3[i].get_vector()):
+	# 		raise Exception()
+	# 	if ret1[i].get_label() != ret2[i].get_label() or ret2[i].get_label() != ret3[i].get_label():
+	# 		raise Exception()
 	return ret3
 
 
@@ -200,23 +188,27 @@ def ipython_partition(images, direct, n):
 		dview = c[:]
 		dview.block = False
 		num_clients = len(c.ids)
-		
+
 
 		start = time.time()
 		ret1 = [c[i % num_clients].apply_sync(local_par_hog, partitions[i]) for i in xrange(len(partitions))]
 		end = time.time() - start
+		ret1 = list(itertools.chain.from_iterable(ret1))
 		print "HOG IPYTHON DIRECT APP: %d images -> %f" % (len(ret1), end)
 
 		start = time.time()
 		ret2 = dview.map_sync(local_par_hog, partitions)
 		end = time.time() - start
+		ret2 = list(itertools.chain.from_iterable(ret2))
 		print "HOG IPYTHON DIRECT MAP: %d images -> %f" % (len(ret2), end)
 
 		start = time.time()
 		rets = [c[i % num_clients].apply_async(local_par_hog, partitions[i]) for i in xrange(len(partitions))]
 		ret3 = [r.get() for r in rets]
 		end = time.time() - start
+		ret3 = list(itertools.chain.from_iterable(ret3))
 		print "HOG IPYTHON DIRECT ASY: %d images -> %f" % (len(ret3), end)
+		
 		return ret3
 	else:
 		dview = c.load_balanced_view()
@@ -225,17 +217,20 @@ def ipython_partition(images, direct, n):
 		start = time.time()
 		ret1 = [dview.apply_sync(local_par_hog, i) for i in partitions]
 		end = time.time() - start
+		ret1 = list(itertools.chain.from_iterable(ret1))
 		print "HOG IPYTHON LBV APP: %d images -> %f" % (len(ret1), end)
 
 		start = time.time()
 		ret2 = dview.map_sync(local_par_hog, partitions)
 		end = time.time() - start
+		ret2 = list(itertools.chain.from_iterable(ret2))
 		print "HOG IPYTHON LBV MAP: %d images -> %f" % (len(ret2), end)
 		
 		start = time.time()
 		rets = [dview.apply_async(local_par_hog, i) for i in partitions]
 		ret3 = [r.get() for r in rets]
 		end = time.time() - start
+		ret3 = list(itertools.chain.from_iterable(ret3))
 		print "HOG IPYTHON LBV ASY: %d images -> %f" % (len(ret3), end)
 		return ret3		
 
@@ -264,19 +259,12 @@ def ipython_par_hog(images, direct):
 		ret2 = dview.map_sync(local_hog, images)
 		end = time.time() - start
 		print "HOG IPYTHON DIRECT MAP: %d images -> %f" % (len(ret2), end)
-		# ret2 = dview.map_sync(local_par_hog, partitions)
-		# end = time.time() - start
-		# print "HOG IPYTHON DIRECT MAP: %d images -> %f" % (len(ret2), end)
 
 		start = time.time()
 		rets = [c[i % num_clients].apply_async(local_hog, images[i]) for i in xrange(len(images))]
 		ret3 = [r.get() for r in rets]
 		end = time.time() - start
 		print "HOG IPYTHON DIRECT ASY: %d images -> %f" % (len(ret3), end)
-		# rets = [c[i % num_clients].apply_async(local_par_hog, partitions[i]) for i in xrange(len(partitions))]
-		# ret3 = [r.get() for r in rets]
-		# end = time.time() - start
-		# print "HOG IPYTHON DIRECT ASY: %d images -> %f" % (len(ret3), end)
 
 		# for i in range(len(ret1)):
 		# 	if not np.array_equal(ret2[i].get_vector(),  ret1[i].get_vector()) or not np.array_equal(ret2[i].get_vector(),  ret3[i].get_vector()):
