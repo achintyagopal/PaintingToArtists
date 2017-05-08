@@ -7,7 +7,7 @@ from multiprocessing import Pool
 from ipyparallel import Client
 import ipyparallel as ipp
 from functools import partial
-import distributed as dask
+# import distributed as dask
 # import threading
 # import Queue
 import time
