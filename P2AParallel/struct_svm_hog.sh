@@ -15,13 +15,17 @@ printf "\n"
 printf "Ipython Data\n"
 printf "Direct\n"
 python main.py --mode feature --folder ../../data --platform ipython --feature-file $feature.feature.file --feature-algorithm $feature
+python main.py --mode feature --folder ../../data --platform ipython --feature-file $feature.feature.file --feature-algorithm $feature
 printf "LBV\n"
+python main.py --mode feature --folder ../../data --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
 python main.py --mode feature --folder ../../data --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
 
 printf "Ipython CV\n"
 printf "Direct\n"
 python main.py --mode feature --folder ../../cv --platform ipython --feature-file $feature.feature.file --feature-algorithm $feature
+python main.py --mode feature --folder ../../cv --platform ipython --feature-file $feature.feature.file --feature-algorithm $feature
 printf "LBV\n"
+python main.py --mode feature --folder ../../cv --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
 python main.py --mode feature --folder ../../cv --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
 
 
