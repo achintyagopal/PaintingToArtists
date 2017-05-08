@@ -2,6 +2,9 @@ from project_types import FeatureConverter, Instance
 import cv2
 from images import *
 import numpy as np
+from multiprocessing import Pool
+from ipyparallel import Client
+from functools import partial
 import pickle
 
 class BagOfWords(FeatureConverter):
@@ -99,3 +102,50 @@ class BagOfWords(FeatureConverter):
 
     def getTestingLabel(self, label):
         return self.testing_instances[index].get_label()
+
+    def setTrainingInstances(self, inst):
+        self.training_instances = inst
+
+    def setTestingInstances(self, inst):
+        self.testing_instances = inst
+
+
+def local_bow_train(image):
+        instances = []
+        img_descriptors = []
+        master_descriptors = []
+        cv2.ocl.setUseOpenCL(False)
+        orb = cv2.ORB_create()
+        for img, label in images:
+            print img
+            img = read_color_image(img)
+            keypoints = orb.detect(img, None)
+            keypoints, descriptors = orb.compute(img, keypoints)
+            if descriptors is None:
+                descriptors = []
+
+            img_descriptors.append(descriptors)
+            for i in descriptors:
+                master_descriptors.append(i)
+        
+
+        master_descriptors = np.float32(master_descriptors)
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+
+        ret, labels, centers = cv2.kmeans(master_descriptors, self.center_num, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+        labels = labels.ravel()
+
+        count = 0
+        img_num = 0
+        for img, label in images:
+            histogram = np.zeros(self.center_num)
+            feature_vector = img_descriptors[img_num]
+            for f in xrange(len(feature_vector)):
+                index = count + f
+                histogram.itemset(labels[index], 1 + histogram.item(labels[index]))
+            count += len(feature_vector)
+            pairing = Instance(histogram, label)
+            instances.append(pairing)
+
+        self.training_instances = instances
+        self.centers = centers

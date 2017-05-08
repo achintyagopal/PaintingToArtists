@@ -56,6 +56,11 @@ def get_args():
                     help="Parallel Platform to run on. Note: if ipython please make sure to run ipcluster before start of program.", 
                     default="native", choices=["native", "ipython"])
 
+    parser.add_argument("--partition", type=str,
+                    help="Whether to partition image list", default="True")
+    parser.add_argument("--num_parts", type=int, 
+                    help="Number of images per partition", default="1")
+
     parser.add_argument("--direct", type=str,
                     help="True to use ipython direct view, False to use load-balanced view.", 
                     default="True")
@@ -217,19 +222,27 @@ def main():
         elif args.platform == "native":
             if args.feature_algorithm == "color":
                 bits = feature_converter.bits
+                train_inst = list()
+                test_inst = list()
                 train_inst = ColorHistogram.native_par_color(training_files, bits, args.procs)
                 test_inst = ColorHistogram.native_par_color(testing_files, bits, args.procs)
                 feature_converter.setTrainingInstances(train_inst)
                 feature_converter.setTestingInstances(test_inst)
             elif args.feature_algorithm == "bow":
-                # TODO
-                BagOfWords.BagOfWords(args.clusters)
+                feature_converter.createTrainingInstances(training_files)
+                feature_converter.createTestingInstances(testing_files)
             elif args.feature_algorithm == "img":
                 feature_converter.createTrainingInstances(training_files)
                 feature_converter.createTestingInstances(testing_files)
             elif args.feature_algorithm == "hog":
-                train_inst = HOG.native_par_hog(training_files, args.procs)
-                test_inst = HOG.native_par_hog(testing_files, args.procs)
+                train_inst = list()
+                test_inst = list()
+                if args.partition.lower() == "false":
+                    train_inst = HOG.native_par_hog(training_files, args.procs)
+                    test_inst = HOG.native_par_hog(testing_files, args.procs)
+                else:
+                    train_inst = HOG.native_partition(training_files, args.procs, args.num_parts)
+                    test_inst = HOG.native_partition(testing_files, args.procs, args.num_parts)
                 feature_converter.setTrainingInstances(train_inst)
                 feature_converter.setTestingInstances(test_inst)
         elif args.platform == "ipython":
@@ -238,19 +251,26 @@ def main():
                 direct = False
             if args.feature_algorithm == "color":
                 bits = feature_converter.bits
+
                 train_inst = ColorHistogram.ipython_par_color(training_files, bits, direct)
                 test_inst = ColorHistogram.ipython_par_color(testing_files, bits, direct)
                 feature_converter.setTrainingInstances(train_inst)
                 feature_converter.setTestingInstances(test_inst)
             elif args.feature_algorithm == "bow":
-                # TODO
-                BagOfWords.BagOfWords(args.clusters)
+                feature_converter.createTrainingInstances(training_files)
+                feature_converter.createTestingInstances(testing_files)
             elif args.feature_algorithm == "img":
                 feature_converter.createTrainingInstances(training_files)
                 feature_converter.createTestingInstances(testing_files)
             elif args.feature_algorithm == "hog":
-                train_inst = HOG.ipython_par_hog(training_files, direct)
-                test_inst = HOG.ipython_par_hog(testing_files, direct)
+                train_inst = list()
+                test_inst = list()
+                if args.partition.lower() == "false":
+                    train_inst = HOG.ipython_par_hog(training_files, direct)
+                    test_inst = HOG.ipython_par_hog(testing_files, direct)
+                else:
+                    train_inst = HOG.ipython_partition(training_files, direct, args.num_parts)
+                    test_inst = HOG.ipython_partition(testing_files, direct, args.num_parts)
                 feature_converter.setTrainingInstances(train_inst)
                 feature_converter.setTestingInstances(test_inst)
         else:
