@@ -106,7 +106,7 @@ def local_color(image, bit):
             histogram[encoding] += 1
     return Instance(histogram, label)
 
-def local_color_parition(images, bit):
+def local_color_partition(images, bit):
     inst = list()
     for image in images:
         img, label = image
