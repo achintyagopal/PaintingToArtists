@@ -228,8 +228,8 @@ def main():
                     train_inst = ColorHistogram.native_par_color(training_files, bits, args.procs)
                     test_inst = ColorHistogram.native_par_color(testing_files, bits, args.procs)
                 else:
-                    train_inst = ColorHistogram.native_partition(training_files, bits, args.procs)
-                    test_inst = ColorHistogram.native_partition(testing_files, bits, args.procs)
+                    train_inst = ColorHistogram.native_partition(training_files, bits, args.procs, args.num_parts)
+                    test_inst = ColorHistogram.native_partition(testing_files, bits, args.procs, args.num_parts)
                 feature_converter.setTrainingInstances(train_inst)
                 feature_converter.setTestingInstances(test_inst)
             elif args.feature_algorithm == "bow":
