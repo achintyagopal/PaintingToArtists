@@ -3,7 +3,7 @@ import cv2
 from images import *
 import numpy as np
 from multiprocessing import Pool
-from ipyparallel import Client
+# from ipyparallel import Client
 from functools import partial
 import pickle
 

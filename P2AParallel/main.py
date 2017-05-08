@@ -8,7 +8,7 @@ import dill as pickle
 import math
 import time
 import multiprocessing
-import ipyparallel
+# import ipyparallel
 
 from project_types import *
 from images import *
@@ -249,7 +249,7 @@ def main():
                     test_inst = HOG.native_partition(testing_files, args.procs, args.num_parts)
                 feature_converter.setTrainingInstances(train_inst)
                 feature_converter.setTestingInstances(test_inst)
-        elif args.platform == "ipython":
+            """elif args.platform == "ipython":
             direct = True
             if args.direct == "false":
                 direct = False
@@ -282,6 +282,7 @@ def main():
                     test_inst = HOG.ipython_partition(testing_files, direct, args.num_parts)
                 feature_converter.setTrainingInstances(train_inst)
                 feature_converter.setTestingInstances(test_inst)
+            """
         else:
             raise Exception("Exception while attempting to run on platform")
 
