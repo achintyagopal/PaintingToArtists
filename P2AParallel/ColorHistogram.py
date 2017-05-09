@@ -260,7 +260,7 @@ def ipython_partition(images, bits, direct, n):
 
 
         start = time.time()
-        ret2 = dview.map_sync(partial_local, images)
+        ret2 = dview.map_sync(partial_local, partitions)
         end = time.time() - start
         ret2 = list(itertools.chain.from_iterable(ret2))
         print "COLOR IPYTHON DIRECT MAP: %d images -> %f" % (len(ret2), end)
