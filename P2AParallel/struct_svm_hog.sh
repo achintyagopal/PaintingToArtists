@@ -2,7 +2,7 @@
 
 ITER=20
 
-feature="hog"
+feature="color"
 algorithm="struct_svm"
 
 printf "FEATURE: "
@@ -14,19 +14,65 @@ printf "\n"
 
 printf "Ipython Data\n"
 printf "Direct\n"
-python main.py --mode feature --folder ../../data --platform ipython --feature-file $feature.feature.file --feature-algorithm $feature
-python main.py --mode feature --folder ../../data --platform ipython --feature-file $feature.feature.file --feature-algorithm $feature
+printf "1\n"
+python main.py --mode feature --folder ../../data --platform ipython --partition true --num_parts 1 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "2\n"
+python main.py --mode feature --folder ../../data --platform ipython --partition true --num_parts 2 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "10\n"
+python main.py --mode feature --folder ../../data --platform ipython --partition true --num_parts 10 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "50\n"
+python main.py --mode feature --folder ../../data --platform ipython --partition true --num_parts 50 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "100\n"
+python main.py --mode feature --folder ../../data --platform ipython --partition true --num_parts 100 --feature-file $feature.feature.file --feature-algorithm $feature
 printf "LBV\n"
-python main.py --mode feature --folder ../../data --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
-python main.py --mode feature --folder ../../data --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
+printf "1\n"
+python main.py --mode feature --folder ../../data --platform ipython --direct false --partition true --num_parts 1 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "2\n"
+python main.py --mode feature --folder ../../data --platform ipython --direct false --partition true --num_parts 2 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "10\n"
+python main.py --mode feature --folder ../../data --platform ipython --direct false --partition true --num_parts 10 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "50\n"
+python main.py --mode feature --folder ../../data --platform ipython --direct false --partition true --num_parts 50 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "100\n"
+python main.py --mode feature --folder ../../data --platform ipython --direct false --partition true --num_parts 100 --feature-file $feature.feature.file --feature-algorithm $feature
+
+printf "\n\nCV\n"
+printf "Ipython Data\n"
+printf "Direct\n"
+printf "1\n"
+python main.py --mode feature --folder ../../cv --platform ipython --partition true --num_parts 1 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "2\n"
+python main.py --mode feature --folder ../../cv --platform ipython --partition true --num_parts 2 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "10\n"
+python main.py --mode feature --folder ../../cv --platform ipython --partition true --num_parts 10 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "50\n"
+python main.py --mode feature --folder ../../cv --platform ipython --partition true --num_parts 50 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "100\n"
+python main.py --mode feature --folder ../../cv --platform ipython --partition true --num_parts 100 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "LBV\n"
+printf "1\n"
+python main.py --mode feature --folder ../../cv --platform ipython --direct false --partition true --num_parts 1 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "2\n"
+python main.py --mode feature --folder ../../cv --platform ipython --direct false --partition true --num_parts 2 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "10\n"
+python main.py --mode feature --folder ../../cv --platform ipython --direct false --partition true --num_parts 10 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "50\n"
+python main.py --mode feature --folder ../../cv --platform ipython --direct false --partition true --num_parts 50 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "100\n"
+python main.py --mode feature --folder ../../cv --platform ipython --direct false --partition true --num_parts 100 --feature-file $feature.feature.file --feature-algorithm $feature
+
+
+# python main.py --mode feature --folder ../../data --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
+# python main.py --mode feature --folder ../../data --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
 
 printf "Ipython CV\n"
 printf "Direct\n"
-python main.py --mode feature --folder ../../cv --platform ipython --feature-file $feature.feature.file --feature-algorithm $feature
-python main.py --mode feature --folder ../../cv --platform ipython --feature-file $feature.feature.file --feature-algorithm $feature
+
+# python main.py --mode feature --folder ../../cv --platform ipython --feature-file $feature.feature.file --feature-algorithm $feature
+# python main.py --mode feature --folder ../../cv --platform ipython --feature-file $feature.feature.file --feature-algorithm $feature
 printf "LBV\n"
-python main.py --mode feature --folder ../../cv --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
-python main.py --mode feature --folder ../../cv --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
+# python main.py --mode feature --folder ../../cv --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
+# python main.py --mode feature --folder ../../cv --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
 
 
 # printf "Color\n"
@@ -47,7 +93,7 @@ python main.py --mode feature --folder ../../cv --platform ipython --direct fals
 # printf "1\n"
 # python main.py --mode feature --folder ../../data --procs 1 --feature-file $feature.feature.file --feature-algorithm $feature
 # printf "2\n"
-# python main.py --mode feature --folder ../../data --procs 2 --feature-file $feature.feature.file --feature-algorithm $feature
+python main.py --mode feature --folder ../data --procs 3 --feature-file $feature.feature.file --feature-algorithm $feature
 # printf "4\n"
 # python main.py --mode feature --folder ../../data --procs 4 --feature-file $feature.feature.file --feature-algorithm $feature
 # printf "8\n"
