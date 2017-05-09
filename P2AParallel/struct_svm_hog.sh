@@ -2,7 +2,7 @@
 
 ITER=20
 
-feature="color"
+feature="hog"
 algorithm="struct_svm"
 
 printf "FEATURE: "
