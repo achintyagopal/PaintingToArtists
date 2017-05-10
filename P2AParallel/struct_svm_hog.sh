@@ -2,7 +2,7 @@
 
 ITER=20
 
-feature="color"
+feature="hog"
 algorithm="struct_svm"
 
 printf "FEATURE: "
@@ -11,6 +11,18 @@ printf "\n"
 printf "ALGORITHM: "
 printf $algorithm
 printf "\n"
+
+python main.py --mode feature --folder ../../data --platform ipython --partition true --num_parts 1 --feature-file $feature.feature.file --feature-algorithm $feature
+python main.py --mode feature --folder ../../data --platform ipython --partition true --num_parts 2 --feature-file $feature.feature.file --feature-algorithm $feature
+python main.py --mode feature --folder ../../data --platform ipython --partition true --num_parts 10 --feature-file $feature.feature.file --feature-algorithm $feature
+python main.py --mode feature --folder ../../data --platform ipython --partition true --num_parts 50 --feature-file $feature.feature.file --feature-algorithm $feature
+python main.py --mode feature --folder ../../data --platform ipython --partition true --num_parts 100 --feature-file $feature.feature.file --feature-algorithm $feature
+printf "\n\n"
+python main.py --mode feature --folder ../../data --platform ipython --direct false --partition true --num_parts 1 --feature-file $feature.feature.file --feature-algorithm $feature
+python main.py --mode feature --folder ../../data --platform ipython --direct false --partition true --num_parts 2 --feature-file $feature.feature.file --feature-algorithm $feature
+python main.py --mode feature --folder ../../data --platform ipython --direct false --partition true --num_parts 10 --feature-file $feature.feature.file --feature-algorithm $feature
+python main.py --mode feature --folder ../../data --platform ipython --direct false --partition true --num_parts 50 --feature-file $feature.feature.file --feature-algorithm $feature
+python main.py --mode feature --folder ../../data --platform ipython --direct false --partition true --num_parts 100 --feature-file $feature.feature.file --feature-algorithm $feature
 
 
 # printf "Color"
@@ -91,7 +103,6 @@ printf "\n"
 # printf "LBV"
 # python main.py --mode feature --folder ../../data --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
 # printf "Direct"
-python main.py --mode feature --folder ../../data --platform ipython --feature-file $feature.feature.file --feature-algorithm $feature
 
 # printf "Ipython CV\n"
 # printf "Direct\n"
