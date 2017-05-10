@@ -13,17 +13,17 @@ printf $algorithm
 printf "\n"
 
 
-printf "Color"
-printf "1\n"
-python main.py --mode feature --folder ../../cv --procs 1 --feature-file $feature.feature.file --feature-algorithm $feature
-printf "2\n"
-python main.py --mode feature --folder ../../cv --procs 2 --feature-file $feature.feature.file --feature-algorithm $feature
-printf "4\n"
-python main.py --mode feature --folder ../../cv --procs 4 --feature-file $feature.feature.file --feature-algorithm $feature
-printf "8\n"
-python main.py --mode feature --folder ../../cv --procs 8 --feature-file $feature.feature.file --feature-algorithm $feature
-printf "16\n"
-python main.py --mode feature --folder ../../cv --procs 16 --feature-file $feature.feature.file --feature-algorithm $feature
+# printf "Color"
+# printf "1\n"
+# python main.py --mode feature --folder ../../cv --procs 1 --feature-file $feature.feature.file --feature-algorithm $feature
+# printf "2\n"
+# python main.py --mode feature --folder ../../cv --procs 2 --feature-file $feature.feature.file --feature-algorithm $feature
+# printf "4\n"
+# python main.py --mode feature --folder ../../cv --procs 4 --feature-file $feature.feature.file --feature-algorithm $feature
+# printf "8\n"
+# python main.py --mode feature --folder ../../cv --procs 8 --feature-file $feature.feature.file --feature-algorithm $feature
+# printf "16\n"
+# python main.py --mode feature --folder ../../cv --procs 16 --feature-file $feature.feature.file --feature-algorithm $feature
 
 # printf "\nPartition\n"
 
@@ -91,7 +91,7 @@ python main.py --mode feature --folder ../../cv --procs 16 --feature-file $featu
 # printf "LBV"
 # python main.py --mode feature --folder ../../data --platform ipython --direct false --feature-file $feature.feature.file --feature-algorithm $feature
 # printf "Direct"
-# python main.py --mode feature --folder ../../data --platform ipython --feature-file $feature.feature.file --feature-algorithm $feature
+python main.py --mode feature --folder ../../data --platform ipython --feature-file $feature.feature.file --feature-algorithm $feature
 
 # printf "Ipython CV\n"
 # printf "Direct\n"
