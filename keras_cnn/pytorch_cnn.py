@@ -45,9 +45,8 @@ def get_files(folder_name):
 
 training_files = get_files('../data/train/')
 testing_files = get_files('../data/test/')
-# sort(testing_files)
 testing_files.sort()
-# traingi
+# training_files.sort()
 print(len(training_files))
 print(len(testing_files))
 
@@ -84,8 +83,8 @@ class PaintingDataset(torch.utils.data.Dataset):
                 print(i)
 
             i += 1
-            # if i % 1000 == 0:
-                # break
+            if i % 1000 == 0:
+                break
             vector = read_color_image(filename) / 255.
             self.data.append( \
                 (torch.from_numpy(np.transpose(vector, (2,1,0))).type(torch.FloatTensor), \
@@ -122,114 +121,34 @@ class CNN_Model(nn.Module):
         y = y.view(x.size()[0], -1)
         return self.seq2(y)
 
-def evaluate(testing_files, epoch):
-    labels = set()
-    for _, label in testing_files:
-        labels.add(str(label))
-
-    labels = list(labels)
-
-    label_dict = {}
-    i = 0
-    for label in labels:
-        label_dict[str(label)] = i
-        i += 1
-
-
-    x = []
-    variances = []
-    
-    i = 0
-    for filename, label in testing_files:
-        i += 1
-        if i % 100 == 0:
-            print(i)
-        # if i % 1000 == 0:
-            # break
-        vector = read_color_image(filename)
-        x.append(vector)
-        variances.append(np.std(vector.ravel()))
-
-    x = Variable(torch.from_numpy(np.transpose(np.array(x), (0,3,2,1))).type(torch.FloatTensor), volatile=True)
-    _, predictions = torch.max(model(x), dim=1)
-    predictions = predictions.data.numpy()
-    # print(predictions.shape)
-    distr = [0,0,0,0,0,0]
-    old_filename = ""
-    count = 0
-    old_label = ""
-    correct = 0
-    total = 0
-    prediction_string = ""
-
-    for filename, label in testing_files:
-        # img = read_color_image(filename)
-        # if count % 1000 == 0:
-            # break
-
-        file_pre = filename[:filename.rfind("_")]
-        if file_pre != old_filename:
-
-            label_index = distr.index(max(distr))
-            
-            if old_label != "" and old_label == labels[label_index]:
-                correct += 1
-            if old_label != "":
-                prediction_string += str(old_label) + " " + str(labels[label_index]) + "\n"
-                total += 1
-            distr = [0,0,0,0,0,0]
-            old_label = label
-            old_filename = file_pre
-
-        # print(distr, predictions[count], variances[count])
-        distr[predictions[count]] += variances[count]
-        count += 1
-
-    label_index = distr.index(max(distr))
-    prediction_string += str(old_label) + " " + str(labels[label_index]) + "\n"
-    if old_label == labels[label_index]:
-        correct += 1
-    total += 1
-
-    filename = "epoch_" + str(epoch) + ".predictions"
-    with open(filename, 'wb') as writer:
-        pickle.dump(prediction_string, writer)
-
-    print("Testing accuracy for epoch " + str(epoch) + ":", correct/float(total))
-
-
-
 model = CNN_Model()
-# evaluate(testing_files, 0)
-# sys.exit(0)
 batch_size = 128
 testloader = torch.utils.data.DataLoader(
     PaintingDataset(testing_files), batch_size=batch_size, shuffle=False)
-# evaluate2(testloader, testing_files, batch_size, 0)
-# sys.exit(0)
 
 dataloader = torch.utils.data.DataLoader(
     PaintingDataset(training_files), batch_size=batch_size, shuffle=True)
 
-criterion = torch.nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-3, betas=(0.5, 0.999))
 
 def train(epoch):
-    criterion = torch.nn.CrossEntropyLoss()
+    criterion = torch.nn.CrossEntropyLoss(reduce=False)
+    model.train()
+    total_loss = 0
     for i, (data, y_class, variance) in enumerate(dataloader):
-        # print(data.size())
-        # print(y_class.size())
+        optimizer.zero_grad()
         data = Variable(data)
         y_class = Variable(y_class)
         variance = Variable(variance)
-        loss = criterion(variance * model(data), y_class.view(-1))
-        optimizer.zero_grad()
+        loss = torch.mean(variance * criterion(model(data), y_class.view(-1)))
+        total_loss += loss
         loss.backward()
         optimizer.step()
         if i % 1 == 0:
             print("loss at batch {0}: {1}".format(i, loss.data[0]))
+    print("Total Average Loss at Epoch {0}: {1}".format(epoch, total_loss.data[0] / len(dataloader)))
 
-def evaluate2(epoch):
+def evaluate(epoch):
 
     distr = [0,0,0,0,0,0]
     old_filename = ""
@@ -238,19 +157,18 @@ def evaluate2(epoch):
     correct = 0
     total = 0
     prediction_string = ""
-
+    
+    model.eval()
     for i, (data, y_class, variances) in enumerate(testloader):
-        data = Variable(data)
+        data = Variable(data, volatile=True)
         variances = variances.numpy()
-        # y_class = Variable(y_class)
-        # variance = Variable(variance)
         _, predictions = torch.max(model(data), dim=1)
-        # print(predictions)
+
         predictions = predictions.data.numpy()
         for j, prediction in enumerate(predictions):
-            # print(i*batch_size + j)
+
             filename, label = testing_files[i*batch_size + j]
-            # print(filename)
+
             file_pre = filename[:filename.rfind("_")]
             if file_pre != old_filename:
 
@@ -276,8 +194,7 @@ def evaluate2(epoch):
     filename = "epoch_" + str(epoch) + ".predictions"
     with open(filename, 'w') as writer:
         writer.write(prediction_string)
-        # pickle.dump(prediction_string, writer)
-    # print(total)
+
     print("Testing accuracy for epoch " + str(epoch) + ":", correct/float(total))
     
 
@@ -286,34 +203,6 @@ epochs = 1
 for epoch in range(epochs):
     print("Epoch {0}".format(epoch))
     train(epoch)
-    evaluate2(epoch)
+    evaluate(epoch)
     torch.save(model.state_dict(), 'models/model_epoch_%d.pth' % (epoch))
     # g.load_state_dict(torch.load('netG.path'))
-
-# train(0)
-# sys.exit(0)
-
-
-# for i, (data, y_class, variance) in enumerate(dataloader):
-#     # print(data.size())
-#     # print(y_class.size())
-#     data = Variable(data)
-#     y_class = Variable(y_class)
-#     variance = Variable(variance)
-#     loss = criterion(variance * model(data), y_class.view(-1))
-#     optimizer.zero_grad()
-#     loss.backward()
-#     optimizer.step()
-#     if i % 10 == 0:
-#         print("loss at batch {0}: {1}".format(i, loss.data[0]))
-
-    # evaluate(testing_files, )
-# y = []
-
-# for filename, label in files:
-#     vector = read_color_image(filename)
-#     x.append(vector)
-#     y.append(self.label_dict[label])
-
-# x = np.array(x)
-# y = np.array(y)
