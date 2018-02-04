@@ -117,12 +117,14 @@ class CNN_Model(nn.Module):
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.AvgPool2d(kernel_size=1, stride=1),
             # nn.Dropout(p=0.5),
         )
         self.seq2 = torch.nn.Sequential(
-            nn.Linear(32*4*4, 128),
-            nn.Dropout(p=0.5),
-            nn.Linear(128, 6),
+            nn.Linear(32*4*4, 6),
+            # nn.Linear(32*4*4, 128),
+            # nn.Dropout(p=0.5),
+            # nn.Linear(128, 6),
         )
 
     def forward(self, x):
@@ -209,7 +211,7 @@ def evaluate(epoch):
     
 
 
-epochs = 1
+epochs = 10
 for epoch in range(epochs):
     print("Epoch {0}".format(epoch))
     train(epoch)
