@@ -109,13 +109,21 @@ class CNN_Model(nn.Module):
         super(CNN_Model, self).__init__()
 
         self.seq = torch.nn.Sequential(
-            nn.Conv2d(3, 16, 5, 2, 2, bias=True),
+            nn.Conv2d(3, 8, kernel_size=3, padding=1, bias=True),
+            nn.BatchNorm2d(8),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(8, 16, kernel_size=3, padding=1, bias=True),
             nn.BatchNorm2d(16),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(16, 32, 5, 2, 2, bias=True),
+            nn.Conv2d(16, 32, kernel_size=3, padding=1, bias=True),
             nn.BatchNorm2d(32),
             nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            # nn.Conv2d(32, 32, kernel_size=3, padding=1, bias=True),
+            # nn.BatchNorm2d(32),
+            # nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.AvgPool2d(kernel_size=1, stride=1),
             # nn.Dropout(p=0.5),
@@ -129,7 +137,7 @@ class CNN_Model(nn.Module):
 
     def forward(self, x):
         y = self.seq(x)
-        # print(y.size())
+        print(y.size())
         y = y.view(x.size()[0], -1)
         return self.seq2(y)
 
