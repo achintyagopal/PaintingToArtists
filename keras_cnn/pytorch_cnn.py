@@ -83,8 +83,8 @@ class PaintingDataset(torch.utils.data.Dataset):
                 print(i)
 
             i += 1
-            if i % 1000 == 0:
-                break
+            # if i % 1000 == 0:
+                # break
             vector = read_color_image(filename) / 255.
             self.data.append( \
                 (torch.from_numpy(np.transpose(vector, (2,1,0))).type(torch.FloatTensor), \
@@ -141,12 +141,12 @@ def train(epoch):
         y_class = Variable(y_class)
         variance = Variable(variance)
         loss = torch.mean(variance * criterion(model(data), y_class.view(-1)))
-        total_loss += loss
+        total_loss += loss.data[0]
         loss.backward()
         optimizer.step()
         if i % 1 == 0:
             print("loss at batch {0}: {1}".format(i, loss.data[0]))
-    print("Total Average Loss at Epoch {0}: {1}".format(epoch, total_loss.data[0] / len(dataloader)))
+    print("Total Average Loss at Epoch {0}: {1}".format(epoch, total_loss / len(dataloader)))
 
 def evaluate(epoch):
 
@@ -157,7 +157,7 @@ def evaluate(epoch):
     correct = 0
     total = 0
     prediction_string = ""
-    
+
     model.eval()
     for i, (data, y_class, variances) in enumerate(testloader):
         data = Variable(data, volatile=True)
@@ -205,4 +205,4 @@ for epoch in range(epochs):
     train(epoch)
     evaluate(epoch)
     torch.save(model.state_dict(), 'models/model_epoch_%d.pth' % (epoch))
-    # g.load_state_dict(torch.load('netG.path'))
+    # g.load_state_dict(torch.load('models/model_epoch_3.path'))
