@@ -78,6 +78,7 @@ class PaintingDataset(torch.utils.data.Dataset):
         self.files = files
         self.data = []
         i = 0
+        # variances = []
         for filename, label in files:
             if i % 100 == 0:
                 print(i)
@@ -86,10 +87,15 @@ class PaintingDataset(torch.utils.data.Dataset):
             # if i % 1000 == 0:
                 # break
             vector = read_color_image(filename) / 255.
+            variance = 100 * (np.std(vector.ravel()) ** 2)
+            # variances.append(variance)
             self.data.append( \
                 (torch.from_numpy(np.transpose(vector, (2,1,0))).type(torch.FloatTensor), \
                 torch.from_numpy(np.array([label_dict[label]])), \
-                torch.from_numpy(np.array([np.std(vector.ravel())])).type(torch.FloatTensor)  ))
+                torch.from_numpy(np.array([variance])).type(torch.FloatTensor)  ))
+        # variances = np.array(variances)
+        # print(np.min(variances))
+        # print(np.max(variances))
 
     def __len__(self):
         return len(self.data)
@@ -103,21 +109,25 @@ class CNN_Model(nn.Module):
         super(CNN_Model, self).__init__()
 
         self.seq = torch.nn.Sequential(
-            nn.Conv2d(3, 32, 5, 2, 2, bias=False),
+            nn.Conv2d(3, 16, 5, 2, 2, bias=True),
+            nn.BatchNorm2d(16),
             nn.ReLU(),
-            nn.Conv2d(32, 32, 5, 2, 2, bias=False),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(16, 32, 5, 2, 2, bias=True),
+            nn.BatchNorm2d(32),
             nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.Dropout(p=0.5),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            # nn.Dropout(p=0.5),
         )
         self.seq2 = torch.nn.Sequential(
-            nn.Linear(32*8*8, 128),
+            nn.Linear(32*4*4, 128),
             nn.Dropout(p=0.5),
             nn.Linear(128, 6),
         )
 
     def forward(self, x):
         y = self.seq(x)
+        # print(y.size())
         y = y.view(x.size()[0], -1)
         return self.seq2(y)
 
